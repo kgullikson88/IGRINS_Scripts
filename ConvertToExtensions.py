@@ -43,10 +43,12 @@ def main():
   for group in extracted_files.keys():
     for objtype in extracted_files[group].keys():
       column_list = []
+      header_list = []
       for ordernum in sorted(extracted_files[group][objtype].keys()):
         for band in extracted_files[group][objtype][ordernum].keys():
           fname = extracted_files[group][objtype][ordernum][band]
           hdulist = fits.open(fname)
+          header = hdulist[0].header
           order = HelperFunctions.ReadFits(fname)[0]
 
           #Check for a wave file
@@ -57,7 +59,6 @@ def main():
             order.x = fit(order.x)
           else:
             print "Wavelength file not found!"
-            header = hdulist[0].header
             a, b = header['CRVAL1'], header['CDELT1']
             order.x = a + b*order.x
 
@@ -70,12 +71,24 @@ def main():
                     "flux": order.y,
                     "continuum": order.cont,
                     "error": order.err}
+          hinfo = [["AP-NUM", header["AP-NUM"]],
+                   ["AP-COEF1", header["AP-COEF1"]],
+                   ["AP-COEF2", header["AP-COEF2"]],
+                   ["AP-WIDTH", header["AP-WIDTH"]],
+                   ["BAND", band],
+                   ["FNAME", fname, 'original filename']]
           column_list.append(column)
+          header_list.append(hinfo)
 
       outfilename = "%s_G%i.fits" %(objtype, group)
       print "Outputting to %s" %outfilename
-      column_list = sorted(column_list, key = lambda c: c["wavelength"][0])
-      HelperFunctions.OutputFitsFileExtensions(column_list, fname, outfilename, mode="new")
+      sorter = [i[0] for i in sorted(enumerate(column_list), key = lambda c: c[1]["wavelength"][0])]
+      clist = []
+      hlist = []
+      for i in sorter:
+        clist.append(column_list[i])
+        hlist.append(header_list[i])
+      HelperFunctions.OutputFitsFileExtensions(clist, fname, outfilename, mode="new", headers_info=hlist)
 
 
   
