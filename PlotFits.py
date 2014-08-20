@@ -43,7 +43,7 @@ if __name__ == "__main__":
     
     for i, order in enumerate(orders):
       
-      order.cont = FittingUtilities.Continuum(order.x, order.y, lowreject=3, highreject=3)
+      #order.cont = FittingUtilities.Continuum(order.x, order.y, lowreject=3, highreject=3)
       if pixelscale:
         order.x = numpy.arange(order.size())
       
