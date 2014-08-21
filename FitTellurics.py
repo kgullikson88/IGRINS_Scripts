@@ -66,6 +66,7 @@ if __name__ == "__main__":
         logfile.write(u"Fitting file {0:s}\n".format(fname))
         name = fname.split(".fits")[0]
         outfilename = u"Corrected_{0:s}.fits".format(name)
+        exists  = False
 
         #Read file
         orders = HelperFunctions.ReadExtensionFits(fname)
@@ -322,6 +323,7 @@ if __name__ == "__main__":
                 #Save the fitted variables in the primary header
                 pri_header = {"RESOLUTION": resolution,
                               "HUMIDITY": humidity,
+                              "TEMPERATURE": temperature,
                               "CH4": ch4,
                               "CO2": co2,
                               "CO": co,

@@ -58,8 +58,8 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
                 primary = primary_orders[i]
             if i == 0:
                 print "Humidity = {0:g}\nT = {1:g}\n[CH4] = {2:g}\n[CO2] = {3:g}\n" \
-                      "CO = {4:g}\nN2O \ {5:g}\n".format(primary_header['humidity'],
-                                                         primary_header['temperature'],
+                      "CO = {4:g}\nN2O = {5:g}\n".format(primary_header['humidity'],
+                                                         primary_header['airtemp'],
                                                          primary_header['ch4'],
                                                          primary_header['co2'],
                                                          primary_header['co'],
@@ -113,7 +113,7 @@ def main1():
         outfilename = "%s_telluric_corrected.fits" % (original.split(".fits")[0])
         print "Outputting to %s" % outfilename
 
-        corrected_orders = Correct(original, corrected, offset=None, get_primary=primary)
+        corrected_orders = Correct(original, corrected, offset=None, get_primary=primary, plot=plot)
 
         column_list = []
         if plot:
@@ -151,7 +151,7 @@ def main1():
             outfilename = "{0:s}_telluric_corrected.fits".format(original.split(".fits")[0])
             print "Outputting to %s" % outfilename
 
-            corrected_orders = Correct(original, corrected, offset=None)
+            corrected_orders = Correct(original, corrected, offset=None, plot=plot)
 
             column_list = []
             if plot:
