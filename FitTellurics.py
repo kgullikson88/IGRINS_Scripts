@@ -15,22 +15,6 @@ import GetAtmosphere
 
 badregions = [[]]
 
-namedict = {"pressure": ["PRESFIT", "PRESVAL", "Pressure"],
-            "temperature": ["TEMPFIT", "TEMPVAL", "Temperature"],
-            "angle": ["ZD_FIT", "ZD_VAL", "Zenith Distance"],
-            "resolution": ["RESFIT", "RESVAL", "Detector Resolution"],
-            "h2o": ["H2OFIT", "H2OVAL", "H2O abundance"],
-            "co2": ["CO2FIT", "CO2VAL", "CO2 abundance"],
-            "o3": ["O3FIT", "O3VAL", "O3 abundance"],
-            "n2o": ["N2OFIT", "N2OVAL", "N2O abundance"],
-            "co": ["COFIT", "COVAL", "CO abundance"],
-            "ch4": ["CH4FIT", "CH4VAL", "CH4 abundance"],
-            "o2": ["O2FIT", "O2VAL", "O2 abundance"],
-            "no": ["NOFIT", "NOVAL", "NO abundance"],
-            "so2": ["SO2FIT", "SO2VAL", "SO2 abundance"],
-            "no2": ["NO2FIT", "NO2VAL", "NO2 abundance"],
-            "nh3": ["NH3FIT", "NH3VAL", "NH3 abundance"],
-            "hno3": ["HNO3FIT", "HNO3VAL", "HNO3 abundance"]}
 
 
 def FindOrderNums(orders, wavelengths):
@@ -74,7 +58,7 @@ if __name__ == "__main__":
 
     # START LOOPING OVER INPUT FILES
     for fname in fileList:
-        print "Fitting file {1:s}".format(fname)
+        print "Fitting file {0:s}".format(fname)
         #Make sure this file is an object file
         header = fits.getheader(fname)
 
@@ -209,7 +193,7 @@ if __name__ == "__main__":
         logfile.write("CO values and their weights\n")
         for c, w in zip(carbon_monoxide, chisquared[numskip:]):
             logfile.write(u"{0:g}\t{1:g}\n".format(c, w))
-        logfile.write(u"Best CO Mixing Ratio = {1:g}".format(co))
+        logfile.write(u"Best CO Mixing Ratio = {0:g}\n".format(co))
         fitter.AdjustValue({"co": co})
 
 
@@ -244,7 +228,7 @@ if __name__ == "__main__":
         logfile.write("CO2 values and their weights\n")
         for c, w in zip(carbon_dioxide, chisquared[numskip:]):
             logfile.write(u"{0:g}\t{1:g}\n".format(c, w))
-        logfile.write(u"Best CO2 Mixing Ratio = {1:g}".format(co2))
+        logfile.write(u"Best CO2 Mixing Ratio = {0:g}\n".format(co2))
         fitter.AdjustValue({"co2": co2})
 
 
@@ -279,7 +263,7 @@ if __name__ == "__main__":
         logfile.write("N2O values and their weights\n")
         for n, w in zip(nitro, chisquared[numskip:]):
             logfile.write(u"{0:g}\t{1:g}\n".format(n, w))
-        logfile.write(u"Best N2O Mixing Ratio = {1:g}".format(n2o))
+        logfile.write(u"Best N2O Mixing Ratio = {0:g}\n".format(n2o))
         fitter.AdjustValue({"n2o": n2o})
 
         #Get the average resolution and velocity shift
@@ -290,7 +274,7 @@ if __name__ == "__main__":
             logfile.write(u"{0:g}\t{1:g}\t{2:g}\n".format(R, v, w))
         resolution = np.sum(resolution * np.array(chisquared)) / np.sum(chisquared)
         logfile.write(u"Best resolution = {0:.5f}\n".format(resolution))
-        logfile.write(u"Best velocity shift = {0:.4f} km/s".format(vel))
+        logfile.write(u"Best velocity shift = {0:.4f} km/s\n".format(vel))
 
 
 
@@ -346,7 +330,6 @@ if __name__ == "__main__":
                 exists = True
 
             else:
-                HelperFunctions.OutputFitsFileExtensions(columns, outfilename, outfilename,
-                                                     headers_info=[header_info, ], mode="append")
+                HelperFunctions.OutputFitsFileExtensions(columns, outfilename, outfilename, mode="append")
 
         logfile.close()
