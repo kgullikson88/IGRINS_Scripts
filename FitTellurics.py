@@ -1,15 +1,15 @@
-import numpy as np
 import sys
 import os
-import matplotlib.pyplot as plt
+import FittingUtilities
+
+import numpy as np
 from astropy.io import fits
-from scipy.interpolate import InterpolatedUnivariateSpline as interp
+from astropy import units, constants
+
 import TelluricFitter
 import DataStructures
 import Units
-from astropy import units, constants
 import HelperFunctions
-import FittingUtilities
 import GetAtmosphere
 
 
@@ -124,7 +124,6 @@ if __name__ == "__main__":
         wave0 = []
         chisquared = []
         fitter.DisplayVariables()
-        #for i in [30, 35, 39, 41]:
         for i in FindOrderNums(orders, [1658, 1674, 1689, 1705]):
             print "\n***************************\nFitting order %i: " % (i)
             order = orders[i]
