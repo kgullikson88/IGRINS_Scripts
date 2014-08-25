@@ -89,19 +89,21 @@ if __name__ == "__main__":
 
         #Adjust fitter values
         fitter.AdjustValue({"angle": angle,
-                            "pressure": pressure,
+                            #"pressure": pressure,
                             "resolution": resolution,
                             "temperature": temperature,
                             "o2": 2.12e5})
         fitter.FitVariable({"h2o": humidity,
                             "ch4": 1.8,
-                            "temperature": temperature})
+                            "temperature": temperature,
+			    "pressure": pressure})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
-                          # "ch4": [1.0, 2.5],
-                          #"co2": [340, np.inf],
-                          #"n2o": [0.1, 0.5],
-                          #"co": [0.05, 0.25],
+			  "pressure": [pressure-10, pressure+30],
+                          "ch4": [1.0, 20],
+                          "co2": [100, 1000],
+                          "n2o": [0.05, 1.0],
+                          "co": [0.01, 0.9],
                           "resolution": [30000, 50000]})
 
         #Ignore some regions (currently nothing)
@@ -120,6 +122,7 @@ if __name__ == "__main__":
         h2o = []
         T = []
         methane = []
+	P = []
         waveshifts = []
         wave0 = []
         chisquared = []
@@ -143,6 +146,7 @@ if __name__ == "__main__":
             h2o.append(fitter.GetValue("h2o"))
             methane.append(fitter.GetValue("ch4"))
             T.append(fitter.GetValue("temperature"))
+            P.append(fitter.GetValue("pressure"))
 
             chisquared.append((1.0 - min(model.y)) / fitter.chisq_vals[-1])
 
@@ -151,15 +155,18 @@ if __name__ == "__main__":
         humidity = np.sum(np.array(h2o) * np.array(chisquared)) / np.sum(chisquared)
         ch4 = np.sum(np.array(methane) * np.array(chisquared)) / np.sum(chisquared)
         temperature = np.sum(np.array(T) * np.array(chisquared)) / np.sum(chisquared)
-        logfile.write("Humidity/Methane/Temperature values and their weights values:\n")
-        for h, m, t, c in zip(h2o, methane, T, chisquared):
-            logfile.write(u"{0:g}\t{1:g}\t{2:g}\t{3:g}\n".format(h, m, t, c))
+        pressure = np.sum(np.array(P) * np.array(chisquared)) / np.sum(chisquared)
+	logfile.write("Humidity/Methane/Temperature/Pressure values and their weights values:\n")
+        for h, m, t, p, c in zip(h2o, methane, T, P, chisquared):
+	  logfile.write(u"{0:g}\t{1:g}\t{2:g}\t{3:g}\t{4:g}\n".format(h, m, t, p, c))
         logfile.write(u"Best humidity = {0:.4f}\n".format(humidity))
         logfile.write(u"Best temperature = {0:.4f}\n".format(temperature))
         logfile.write(u"Best Methane mixing ratio = {0:.4f}\n".format(ch4))
+	logfile.write("Best Pressure = {0:.4f}\n".format(pressure))
         fitter.AdjustValue({"h2o": humidity,
                             "ch4": ch4,
-                            "temperature": temperature})
+                            "temperature": temperature,
+			    "pressure": pressure})
 
 
         # ---------------------------------------------------------------------------------
