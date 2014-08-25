@@ -128,7 +128,7 @@ if __name__ == "__main__":
         pressure.append(P[bestindex])
 
         # zenith_angle.append(90.0 - float(header['ALT']))
-        zenith_angle.append(np.arccos(float(header['amstart'])))
+        zenith_angle.append(np.arccos(1.0 / float(header['amstart'])) * 180.0 / np.pi)
 
     #Figure out the average values for each of the quantities
     ZD = np.mean(zenith_angle)
