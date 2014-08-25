@@ -16,7 +16,6 @@ import GetAtmosphere
 badregions = [[]]
 
 
-
 def FindOrderNums(orders, wavelengths):
     """
     Given a list of xypoint orders and
@@ -59,19 +58,19 @@ if __name__ == "__main__":
     # START LOOPING OVER INPUT FILES
     for fname in fileList:
         print "Fitting file {0:s}".format(fname)
-        #Make sure this file is an object file
+        # Make sure this file is an object file
         header = fits.getheader(fname)
 
         logfile = open(u"fitlog_{0:s}.txt".format(fname.split(".fits")[0]), "a")
         logfile.write(u"Fitting file {0:s}\n".format(fname))
         name = fname.split(".fits")[0]
         outfilename = "Corrected_{0:s}.fits".format(name)
-        exists  = False
+        exists = False
 
         #Read file
         orders = HelperFunctions.ReadExtensionFits(fname)
 
-        angle = 90 - float(header["ZD"])
+        angle = float(header["ZD"])
         resolution = 40000.0
         humidity = header['HUMIDITY']
         T_fahrenheit = header['AIRTEMP']
@@ -96,10 +95,10 @@ if __name__ == "__main__":
         fitter.FitVariable({"h2o": humidity,
                             "ch4": 1.8,
                             "temperature": temperature,
-			    "pressure": pressure})
+                            "pressure": pressure})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
-			  "pressure": [pressure-30, pressure+100],
+                          "pressure": [pressure - 30, pressure + 100],
                           "ch4": [1.0, 20],
                           "co2": [100, 1000],
                           "n2o": [0.05, 1.0],
@@ -109,7 +108,7 @@ if __name__ == "__main__":
         #Ignore some regions (currently nothing)
         fitter.IgnoreRegions(badregions)
 
-        fitter.continuum_fit_order=5
+        fitter.continuum_fit_order = 5
 
         #############################################################
         #     Now, we start fitting molecules!
@@ -122,7 +121,7 @@ if __name__ == "__main__":
         h2o = []
         T = []
         methane = []
-	P = []
+        P = []
         waveshifts = []
         wave0 = []
         chisquared = []
@@ -156,17 +155,17 @@ if __name__ == "__main__":
         ch4 = np.sum(np.array(methane) * np.array(chisquared)) / np.sum(chisquared)
         temperature = np.sum(np.array(T) * np.array(chisquared)) / np.sum(chisquared)
         pressure = np.sum(np.array(P) * np.array(chisquared)) / np.sum(chisquared)
-	logfile.write("Humidity/Methane/Temperature/Pressure values and their weights values:\n")
+        logfile.write("Humidity/Methane/Temperature/Pressure values and their weights values:\n")
         for h, m, t, p, c in zip(h2o, methane, T, P, chisquared):
-	  logfile.write(u"{0:g}\t{1:g}\t{2:g}\t{3:g}\t{4:g}\n".format(h, m, t, p, c))
+            logfile.write(u"{0:g}\t{1:g}\t{2:g}\t{3:g}\t{4:g}\n".format(h, m, t, p, c))
         logfile.write(u"Best humidity = {0:.4f}\n".format(humidity))
         logfile.write(u"Best temperature = {0:.4f}\n".format(temperature))
         logfile.write(u"Best Methane mixing ratio = {0:.4f}\n".format(ch4))
-	logfile.write("Best Pressure = {0:.4f}\n".format(pressure))
+        logfile.write("Best Pressure = {0:.4f}\n".format(pressure))
         fitter.AdjustValue({"h2o": humidity,
                             "ch4": ch4,
                             "temperature": temperature,
-			    "pressure": pressure})
+                            "pressure": pressure})
 
 
         # ---------------------------------------------------------------------------------
@@ -289,7 +288,7 @@ if __name__ == "__main__":
 
 
         # Finally, apply these parameters to all orders in the data
-        fitter.AdjustValue({"resolution": resolution,})
+        fitter.AdjustValue({"resolution": resolution, })
         for i, order in enumerate(orders):
             print u"\n\nGenerating model for order {0:d} of {1:d}\n".format(i, len(orders))
             fitter.AdjustValue({"wavestart": order.x[0] - 20.0,
@@ -309,7 +308,7 @@ if __name__ == "__main__":
             if min(model.y) > 0.98:
                 #The wavelength calibration might be off
                 wave0 = order.x.mean()
-                fitter.shift = vel / (constants.c.cgs.to(units.km/units.s).value) * wave0
+                fitter.shift = vel / (constants.c.cgs.to(units.km / units.s).value) * wave0
                 model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
                 model.x /= (1.0 + vel / (constants.c.cgs.value * units.cm.to(units.km)))
                 model = FittingUtilities.RebinData(model, order.x)
@@ -324,7 +323,6 @@ if __name__ == "__main__":
                        "model": model.y,
                        "primary": primary.y}
 
-
             if (i == 0 and makenew) or not exists:
                 #Save the fitted variables in the primary header
                 pri_header = {"RESOLUTION": resolution,
@@ -334,7 +332,8 @@ if __name__ == "__main__":
                               "CO2": co2,
                               "CO": co,
                               "N2O": n2o}
-                HelperFunctions.OutputFitsFileExtensions(columns, fname, outfilename, mode="new", primary_header=pri_header)
+                HelperFunctions.OutputFitsFileExtensions(columns, fname, outfilename, mode="new",
+                                                         primary_header=pri_header)
                 exists = True
 
             else:
