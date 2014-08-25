@@ -98,10 +98,10 @@ if __name__ == "__main__":
                             "temperature": temperature})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
-                          "ch4": [1.0, 2.5],
-                          "co2": [340, 400],
-                          "n2o": [0.1, 0.5],
-                          "co": [0.05, 0.25],
+                          # "ch4": [1.0, 2.5],
+                          #"co2": [340, np.inf],
+                          #"n2o": [0.1, 0.5],
+                          #"co": [0.05, 0.25],
                           "resolution": [30000, 50000]})
 
         #Ignore some regions (currently nothing)
