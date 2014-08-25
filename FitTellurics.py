@@ -71,7 +71,7 @@ if __name__ == "__main__":
         #Read file
         orders = HelperFunctions.ReadExtensionFits(fname)
 
-        angle = float(header["ZD"])
+        angle = 90 - float(header["ZD"])
         resolution = 40000.0
         humidity = header['HUMIDITY']
         T_fahrenheit = header['AIRTEMP']
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 			    "pressure": pressure})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
-			  "pressure": [pressure-10, pressure+30],
+			  "pressure": [pressure-30, pressure+100],
                           "ch4": [1.0, 20],
                           "co2": [100, 1000],
                           "n2o": [0.05, 1.0],
