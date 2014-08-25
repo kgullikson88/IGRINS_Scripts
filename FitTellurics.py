@@ -65,7 +65,7 @@ if __name__ == "__main__":
         logfile = open(u"fitlog_{0:s}.txt".format(fname.split(".fits")[0]), "a")
         logfile.write(u"Fitting file {0:s}\n".format(fname))
         name = fname.split(".fits")[0]
-        outfilename = u"Corrected_{0:s}.fits".format(name)
+        outfilename = "Corrected_{0:s}.fits".format(name)
         exists  = False
 
         #Read file
@@ -192,8 +192,8 @@ if __name__ == "__main__":
         co = np.sum(np.array(carbon_monoxide) * np.array(chisquared[numskip:])) / np.sum(chisquared[numskip:])
         logfile.write("CO values and their weights\n")
         for c, w in zip(carbon_monoxide, chisquared[numskip:]):
-            logfile.write(u"{0:g}\t{1:g}\n".format(c, w))
-        logfile.write(u"Best CO Mixing Ratio = {0:g}\n".format(co))
+            logfile.write("{0:g}\t{1:g}\n".format(c, w))
+        logfile.write("Best CO Mixing Ratio = {0:g}\n".format(co))
         fitter.AdjustValue({"co": co})
 
 
