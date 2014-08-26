@@ -133,7 +133,7 @@ if __name__ == "__main__":
             order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=9, lowreject=2, highreject=10)
             primary = DataStructures.xypoint(x=order.x, y=np.ones(order.x.size))
             primary, model, R = fitter.Fit(data=order.copy(),
-                                           resolution_fit_mode="gauss",
+                                           resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
                                            adjust_wave="model",
@@ -182,7 +182,7 @@ if __name__ == "__main__":
             order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=9, lowreject=9, highreject=10)
             primary = DataStructures.xypoint(x=order.x, y=np.ones(order.x.size))
             primary, model, R = fitter.Fit(data=order.copy(),
-                                           resolution_fit_mode="gauss",
+                                           resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
                                            adjust_wave="model",
@@ -217,7 +217,7 @@ if __name__ == "__main__":
             order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=9, lowreject=9, highreject=10)
             primary = DataStructures.xypoint(x=order.x, y=np.ones(order.x.size))
             primary, model, R = fitter.Fit(data=order.copy(),
-                                           resolution_fit_mode="gauss",
+                                           resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
                                            adjust_wave="model",
@@ -252,7 +252,7 @@ if __name__ == "__main__":
             order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=9, lowreject=9, highreject=10)
             primary = DataStructures.xypoint(x=order.x, y=np.ones(order.x.size))
             primary, model, R = fitter.Fit(data=order.copy(),
-                                           resolution_fit_mode="gauss",
+                                           resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
                                            adjust_wave="model",
@@ -295,7 +295,7 @@ if __name__ == "__main__":
             fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
             order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=9, lowreject=2, highreject=10)
             fitter.ImportData(order.copy())
-            fitter.resolution_fit_mode = "gauss"
+            fitter.resolution_fit_mode = "SVD"
             #wave0 = order.x.mean()
             #fitter.shift = vel/(constants.c.cgs.value*units.cm.to(units.km)) * wave0
             print "fitter.shift = ", fitter.shift
