@@ -88,14 +88,13 @@ if __name__ == "__main__":
 
         #Adjust fitter values
         fitter.AdjustValue({"angle": angle,
-                            #"pressure": pressure,
+                            "pressure": pressure,
                             "resolution": resolution,
                             "temperature": temperature,
                             "o2": 2.12e5})
         fitter.FitVariable({"h2o": humidity,
                             "ch4": 1.8,
-                            "temperature": temperature,
-                            "pressure": pressure})
+                            "temperature": temperature})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
                           "pressure": [pressure - 30, pressure + 100],
