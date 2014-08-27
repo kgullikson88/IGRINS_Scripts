@@ -479,24 +479,32 @@ def RefineFromEstimate(template="Corrected_{:s}"):
 
         #Start fitting, order by order
         for i, order in enumerate(orders):
-            #Figure out which molecules to fit
-            for molec in ["h2o", "co2", "co", "ch4", "n2o"]:
-                if molec in fitdict[i + 1]:
-                    if molec == "h2o":
-                        fitter.FitVariable({"h2o": humidity})
-                    else:
-                        fitter.FitVariable({molec: eval(molec)})
-            fitter.DisplayVariables()
+            if i + 1 in [1, 22, 23, 24, 25, 44]:
+                hdulist = fits.open(templatefile):
+                data = hdulist[i + 1].data
+                model = DataStructures.xypoint(x=data["wavelength"],
+                                               y=data["model"])
+                primary = DataStructures.xypoint(x=data["wavelength"],
+                                                 y=data["primary"])
+            else:
+                # Figure out which molecules to fit
+                for molec in ["h2o", "co2", "co", "ch4", "n2o"]:
+                    if molec in fitdict[i + 1]:
+                        if molec == "h2o":
+                            fitter.FitVariable({"h2o": humidity})
+                        else:
+                            fitter.FitVariable({molec: eval(molec)})
+                fitter.DisplayVariables()
 
-            fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
-                                "waveend": order.x[-1] + 5.0})
-            order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=3, lowreject=9, highreject=10)
-            primary, model = fitter.Fit(data=order.copy(),
-                                        resolution_fit_mode="SVD",
-                                        fit_source=True,
-                                        return_resolution=False,
-                                        adjust_wave="model",
-                                        wavelength_fit_order=4)
+                fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
+                                    "waveend": order.x[-1] + 5.0})
+                order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=3, lowreject=9, highreject=10)
+                primary, model = fitter.Fit(data=order.copy(),
+                                            resolution_fit_mode="SVD",
+                                            fit_source=True,
+                                            return_resolution=False,
+                                            adjust_wave="model",
+                                            wavelength_fit_order=4)
 
             # Set up data structures for OutputFitsFile
             columns = {"wavelength": order.x,
