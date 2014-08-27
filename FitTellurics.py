@@ -32,7 +32,7 @@ def FindOrderNums(orders, wavelengths):
     return nums
 
 
-if __name__ == "__main__":
+def EstimateModel():
     # Initialize fitter
     fitter = TelluricFitter.TelluricFitter()
     fitter.SetObservatory("McDonald")
@@ -339,3 +339,192 @@ if __name__ == "__main__":
                 HelperFunctions.OutputFitsFileExtensions(columns, outfilename, outfilename, mode="append")
 
         logfile.close()
+
+
+def RefineFromEstimate(template="Corrected_{:g}"):
+    # Initialize fitter
+    fitter = TelluricFitter.TelluricFitter()
+    fitter.SetObservatory("McDonald")
+
+    fileList = []
+    start = 0
+    end = 999
+    makenew = True
+    edit_atmosphere = False
+    humidity_low = 1.0
+    humidity_high = 99.0
+    for arg in sys.argv[1:]:
+        if "-atmos" in arg:
+            edit_atmosphere = True
+        elif "-hlow" in arg:
+            humidity_low = float(arg.split("=")[1])
+        elif "-hhigh" in arg:
+            humidity_high = float(arg.split("=")[1])
+        else:
+            fileList.append(arg)
+
+
+    # Set up the dictionary for order-by-order fitting
+    fitdict = {1: ["h2o"],
+               2: ["h2o", "co2"],
+               3: ["h2o", "co2"],
+               4: ["h2o", "co2"],
+               5: ["h2o", "co2"],
+               6: ["h2o", "co2"],
+               7: ["h2o", "co2"],
+               8: ["h2o", "co2"],
+               9: ["h2o", "co2"],
+               10: ["h2o", "co2"],
+               11: ["h2o", "co2"],
+               12: ["h2o", "co2", "ch4"],
+               13: ["h2o", "co2", "ch4"],
+               14: ["h2o", "co2", "ch4"],
+               15: ["h2o", "ch4"],
+               16: ["h2o", "ch4"],
+               17: ["h2o", "ch4"],
+               18: ["h2o", "ch4"],
+               19: ["h2o", "ch4"],
+               20: ["h2o", "ch4"],
+               21: ["h2o", "ch4"],
+               22: ["h2o", "ch4"],
+               23: ["h2o", "ch4"],
+               24: ["h2o", "co2"],
+               25: ["h2o", "co2"],
+               26: ["h2o", "co2"],
+               27: ["h2o", "co2"],
+               28: ["h2o", "co2"],
+               29: ["h2o", "co2"],
+               30: ["h2o", "co2", "n2o"],
+               31: ["h2o", "n2o"],
+               32: ["h2o", "n2o"],
+               33: ["h2o", "n2o"],
+               34: ["h2o", "ch4"],
+               35: ["h2o", "ch4"],
+               36: ["h2o", "ch4"],
+               37: ["h2o", "ch4"],
+               38: ["h2o", "ch4", "co"],
+               39: ["h2o", "ch4", "co"],
+               40: ["h2o", "ch4", "co"],
+               41: ["h2o", "ch4"],
+               42: ["h2o", "ch4"],
+               43: ["h2o", "ch4"],
+               44: ["h2o", "ch4"]}
+
+
+    # START LOOPING OVER INPUT FILES
+    for fname in fileList:
+        print "Fitting file {0:s}".format(fname)
+        # Make sure this file is an object file
+        header = fits.getheader(fname)
+
+        logfile = open(u"fitlog_{0:s}.txt".format(fname.split(".fits")[0]), "a")
+        logfile.write(u"Fitting file {0:s}\n".format(fname))
+        name = fname.split(".fits")[0]
+        templatefile = template.format(fname)
+        outfilename = "Corrected_{:s}-0.fits".format(name)
+
+        #Read file
+        orders = HelperFunctions.ReadExtensionFits(fname)
+
+        angle = float(header["ZD"])
+        resolution = 40000.0
+        pressure = header['BARPRESS'] * Units.hPa / Units.inch_Hg
+
+        if edit_atmosphere:
+            filenames = [f for f in os.listdir("./") if "GDAS" in f]
+            height, Pres, Temp, h2o = GetAtmosphere.GetProfile(filenames, header['date-obs'].split("T")[0],
+                                                               header['ut'])
+
+            fitter.EditAtmosphereProfile("Temperature", height, Temp)
+            fitter.EditAtmosphereProfile("Pressure", height, Pres)
+            fitter.EditAtmosphereProfile("H2O", height, h2o)
+
+
+        #Get values from the template file
+        header = fits.getheader(templatefile)
+        humidity = header['HUMIDITY']
+        temperature = header['TEMPERATURE']
+        ch4 = header['CH4']
+        co2 = header['CO2']
+        co = header['CO']
+        n2o = header['N2O']
+
+
+        #Adjust fitter values
+        fitter.AdjustValue({"angle": angle,
+                            "pressure": pressure,
+                            "resolution": resolution,
+                            "temperature": temperature,
+                            "o2": 2.12e5,
+                            "h2o": humidity,
+                            "ch4": ch4,
+                            "co2": co2,
+                            "co": co,
+                            "n2o": n2o})
+        fitter.SetBounds({"h2o": [humidity_low, humidity_high],
+                          "temperature": [temperature - 10, temperature + 10],
+                          "pressure": [pressure - 30, pressure + 100],
+                          "ch4": [ch4 * 0.8, ch4 * 1.2],
+                          "co2": [co2 * 0.8, co2 * 1.2],
+                          "n2o": [n2o * 0.8, n2o * 1.2],
+                          "co": [co * 0.8, co * 1.2],
+                          "resolution": [30000, 50000]})
+
+        #Ignore some regions (currently nothing)
+        fitter.IgnoreRegions(badregions)
+
+        fitter.continuum_fit_order = 3
+
+
+        #Start fitting, order by order
+        for i, order in enumerate(orders):
+            #Figure out which molecules to fit
+            for molec in ["h2o", "co2", "co", "ch4", "n2o"]:
+                if model in fitdict[i + 1]:
+                    fitter.FitVariable({molec: eval(molec)})
+            fitter.DisplayVariables()
+
+            fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
+                                "waveend": order.x[-1] + 5.0})
+            order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=3, lowreject=9, highreject=10)
+            primary, model = fitter.Fit(data=order.copy(),
+                                        resolution_fit_mode="SVD",
+                                        fit_source=True,
+                                        return_resolution=False,
+                                        adjust_wave="model",
+                                        wavelength_fit_order=4)
+
+            # Set up data structures for OutputFitsFile
+            columns = {"wavelength": order.x,
+                       "flux": order.y,
+                       "continuum": order.cont,
+                       "error": order.err,
+                       "model": model.y,
+                       "primary": primary.y}
+
+            header = [["HUMIDITY", fitter.GetValue("h2o")],
+                      ["TEMPERATURE", fitter.GetValue("temperature")],
+                      ["CH4", fitter.GetValue("ch4")],
+                      ["CO2", fitter.GetValue("co2")],
+                      ["CO", fitter.GetValue("co")],
+                      ["N2O", fitter.GetValue("n2o")]]
+
+            if i == 0:
+                HelperFunctions.OutputFitsFileExtensions(columns,
+                                                         fname,
+                                                         outfilename,
+                                                         mode="new",
+                                                         headers_info=[header, ])
+
+            else:
+                HelperFunctions.OutputFitsFileExtensions(columns,
+                                                         outfilename,
+                                                         outfilename,
+                                                         mode="append",
+                                                         headers_info=[header, ])
+
+
+if __name__ == "__main__":
+    if "-e" in sys.argv[1:]:
+        EstimateModel()
+    RefineFromEstimate()
