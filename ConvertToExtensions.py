@@ -10,29 +10,31 @@ import numpy as np
 import HelperFunctions
 
 
-def ReadFile(filename, columns):
+def ReadFile(filename, columns, blazefile="H_BLAZE.DAT", skip=0):
     orders = HelperFunctions.ReadFits(filename)
+    blazes = np.loadtxt(blazefile)
     header_info = []
     for i, order in enumerate(orders):
         # Cut off the edges, where the blaze is really bad
-        order = order[100:-100]
+        order = order[150:-100]
 
         # Convert to air wavelengths!
         wave_A = order.x * u.nm.to(u.angstrom)
         n = 1.0 + 2.735182e-4 + 131.4182 / wave_A ** 2 + 2.76249e8 / wave_A ** 4
         order.x /= n
 
-        # order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=9, lowreject=2, highreject=10)
-        #order.cont[order.cont < 10] = 10
-        #order.y /= order.cont/order.cont.mean()
-        #order.cont = order.cont.mean() * np.ones(order.size())
-        order.cont = FittingUtilities.Iterative_SV(order.y.copy(), 351, 3, lowreject=2, highreject=10)
+        # Divide by blaze function
+        blaze = blazes[:, i + skip][150:-100]
+        blaze[blaze < 1e-3] = 1e-3
+        order.y /= blaze
+        order.err /= blaze
+
+        offset = 0.0
+        order.cont = FittingUtilities.Continuum(order.x, order.y + offset, fitorder=5, lowreject=1.5,
+                                                highreject=2) - offset
+
         plt.plot(order.x, order.y, 'k-', alpha=0.4)
         plt.plot(order.x, order.cont, 'r-', alpha=0.4)
-
-        order.y /= order.cont / order.cont.mean()
-        order.err /= order.cont / order.cont.mean()
-        order.cont = order.cont.mean() * np.ones(order.size())
 
         column = {"wavelength": order.x,
                   "flux": order.y,
@@ -45,6 +47,8 @@ def ReadFile(filename, columns):
 
 if __name__ == "__main__":
     # Read command line arguments
+    lownum = None
+    highnum = None
     for arg in sys.argv[1:]:
         if "num" in arg:
             r = arg.partition("=")[-1].split("-")
@@ -53,16 +57,30 @@ if __name__ == "__main__":
         else:
             filename = arg
 
+    if lownum is None or highnum is None:
+        lownum = int(filename.split(".spec")[0][-4:])
+        highnum = lownum + 3
+
     print "Converting file {:s}".format(filename)
+    if "SDCH" in filename:
+        blazefile = "H_BLAZE.DAT"
+        skip = 2
+    elif "SDCK" in filename:
+        blazefile = "K_BLAZE.DAT"
+        skip = 0
     columns = []
-    columns = ReadFile(filename, columns)
+    columns = ReadFile(filename, columns, blazefile, skip)
 
     # Get the other band
     if "SDCH" in filename:
         filename = filename.replace("SDCH", "SDCK")
+        blazefile = "K_BLAZE.DAT"
+        skip = 0
     elif "SDCK" in filename:
         filename = filename.replace("SDCK", "SDCH")
-    columns = ReadFile(filename, columns)
+        blazefile = "H_BLAZE.DAT"
+        skip = 2
+    columns = ReadFile(filename, columns, blazefile, skip)
 
     # Sort the columns by increasing wavelength
     columns = sorted(columns, key=lambda c: c['wavelength'][0])
