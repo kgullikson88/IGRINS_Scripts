@@ -107,7 +107,7 @@ if __name__ == "__main__":
         #Ignore some regions (currently nothing)
         fitter.IgnoreRegions(badregions)
 
-        fitter.continuum_fit_order = 5
+        fitter.continuum_fit_order = 3
 
         #############################################################
         #     Now, we start fitting molecules!
