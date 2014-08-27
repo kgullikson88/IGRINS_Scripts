@@ -341,7 +341,7 @@ def EstimateModel():
         logfile.close()
 
 
-def RefineFromEstimate(template="Corrected_{:g}"):
+def RefineFromEstimate(template="Corrected_{:s}"):
     # Initialize fitter
     fitter = TelluricFitter.TelluricFitter()
     fitter.SetObservatory("McDonald")
@@ -470,6 +470,7 @@ def RefineFromEstimate(template="Corrected_{:g}"):
                           "co": [co * 0.8, co * 1.2],
                           "resolution": [30000, 50000]})
 
+
         #Ignore some regions (currently nothing)
         fitter.IgnoreRegions(badregions)
 
@@ -480,8 +481,11 @@ def RefineFromEstimate(template="Corrected_{:g}"):
         for i, order in enumerate(orders):
             #Figure out which molecules to fit
             for molec in ["h2o", "co2", "co", "ch4", "n2o"]:
-                if model in fitdict[i + 1]:
-                    fitter.FitVariable({molec: eval(molec)})
+                if molec in fitdict[i + 1]:
+                    if molec == "h2o":
+                        fitter.FitVariable({"h2o": humidity})
+                    else:
+                        fitter.FitVariable({molec: eval(molec)})
             fitter.DisplayVariables()
 
             fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
