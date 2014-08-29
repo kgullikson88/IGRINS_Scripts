@@ -56,7 +56,7 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
             header = corrected_headers[i]
             if get_primary:
                 primary = primary_orders[i]
-            if i == 0:
+            if i == 0 and "CH4" in primary_header.keys():
                 print "Humidity = {0:g}\nT = {1:g}\n[CH4] = {2:g}\n[CO2] = {3:g}\n" \
                       "CO = {4:g}\nN2O = {5:g}\n".format(primary_header['humidity'],
                                                          primary_header['airtemp'],
@@ -64,6 +64,14 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
                                                          primary_header['co2'],
                                                          primary_header['co'],
                                                          primary_header['n2o'])
+            else:
+                print "Humidity = {0:g}\nT = {1:g}\n[CH4] = {2:g}\n[CO2] = {3:g}\n" \
+                      "CO = {4:g}\nN2O = {5:g}\n".format(header['humidity'],
+                                                         header['temperature'],
+                                                         header['ch4'],
+                                                         header['co2'],
+                                                         header['co'],
+                                                         header['n2o'])
         except IndexError:
             model = DataStructures.xypoint(x=data.x, y=np.ones(data.x.size))
             print "Warning!!! Telluric Model not found for order %i" % i
