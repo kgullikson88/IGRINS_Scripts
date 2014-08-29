@@ -12,6 +12,7 @@ from astropy.modeling import models, fitting
 import TelluricFitter
 import HelperFunctions
 import Units
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def RefineWavelength(orders, header, bad_orders, plot=True):
