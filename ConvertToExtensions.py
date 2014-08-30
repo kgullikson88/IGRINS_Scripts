@@ -128,7 +128,7 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
     return orders
 
 
-def ReadFile(filename, columns=[], blazefile="H_BLAZE.DAT", skip=0):
+def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
     orders = HelperFunctions.ReadFits(filename)
     blazes = np.loadtxt(blazefile)
     header_info = []
@@ -152,11 +152,11 @@ def ReadFile(filename, columns=[], blazefile="H_BLAZE.DAT", skip=0):
         order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=5, lowreject=1.5,
                                                 highreject=2)
 
-        column = {"wavelength": order.x,
-                  "flux": order.y,
-                  "continuum": order.cont,
-                  "error": order.err}
-        columns.append(column)
+        # column = {"wavelength": order.x,
+        #          "flux": order.y,
+        #          "continuum": order.cont,
+        #          "error": order.err}
+        #columns.append(column)
         ret_orders.append(order.copy())
     return ret_orders
 
@@ -275,8 +275,7 @@ if __name__ == "__main__":
         blazefile = "K_BLAZE.DAT"
         skip = 0
         bad_orders = [0, 1, 3, 19, 20]
-    columns = []
-    orders = ReadFile(filename, columns, blazefile, skip)
+    orders = ReadFile(filename, blazefile, skip)
 
     # Wavelength calibration
     orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)
@@ -301,7 +300,7 @@ if __name__ == "__main__":
         blazefile = "H_BLAZE.DAT"
         skip = 2
         bad_orders = [0, 21, 22]
-    orders = ReadFile(filename, columns, blazefile, skip)
+    orders = ReadFile(filename, blazefile, skip)
 
     #Wavelength calibration
     orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)

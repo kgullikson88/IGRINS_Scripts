@@ -51,7 +51,7 @@ def EstimateModel():
             humidity_low = float(arg.split("=")[1])
         elif "-hhigh" in arg:
             humidity_high = float(arg.split("=")[1])
-        else:
+        elif arg != "-e":
             fileList.append(arg)
 
 
@@ -408,7 +408,8 @@ def RefineFromEstimate(template="Corrected_{:s}"):
                41: ["h2o", "ch4"],
                42: ["h2o", "ch4"],
                43: ["h2o", "ch4"],
-               44: ["h2o", "ch4"]}
+               44: ["h2o", "ch4"],
+               45: ["h2o", "ch4"]}
 
 
     # START LOOPING OVER INPUT FILES
@@ -464,10 +465,10 @@ def RefineFromEstimate(template="Corrected_{:s}"):
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
                           "pressure": [pressure - 30, pressure + 100],
-                          "ch4": [ch4 * 0.8, ch4 * 1.2],
-                          "co2": [co2 * 0.8, co2 * 1.2],
-                          "n2o": [n2o * 0.8, n2o * 1.2],
-                          "co": [co * 0.8, co * 1.2],
+                          "ch4": [ch4 * 0.5, ch4 * 2],
+                          "co2": [co2 * 0.5, co2 * 2],
+                          "n2o": [n2o * 0.5, n2o * 2],
+                          "co": [co * 0.5, co * 2],
                           "resolution": [30000, 50000]})
 
 
@@ -480,7 +481,7 @@ def RefineFromEstimate(template="Corrected_{:s}"):
         #Start fitting, order by order
         for i, order in enumerate(orders):
             if i + 1 in [1, 22, 23, 24, 25, 44]:
-                hdulist = fits.open(templatefile):
+                hdulist = fits.open(templatefile)
                 data = hdulist[i + 1].data
                 model = DataStructures.xypoint(x=data["wavelength"],
                                                y=data["model"])
@@ -538,5 +539,6 @@ def RefineFromEstimate(template="Corrected_{:s}"):
 
 if __name__ == "__main__":
     if "-e" in sys.argv[1:]:
+        print "Estimating parameters"
         EstimateModel()
     RefineFromEstimate()
