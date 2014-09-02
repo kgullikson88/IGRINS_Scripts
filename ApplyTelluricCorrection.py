@@ -3,11 +3,15 @@ import os
 import FittingUtilities
 
 from astropy.io import fits as pyfits
+from astropy.modeling import fitting, models
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import InterpolatedUnivariateSpline as spline
 
 import DataStructures
 import HelperFunctions
+import statsmodels.api as sm
+from numpy.polynomial import chebyshev
 
 
 def ReadCorrectedFile(fname, yaxis="model"):
@@ -27,7 +31,7 @@ def ReadCorrectedFile(fname, yaxis="model"):
     return orders, headers
 
 
-def Correct(original, corrected, offset=None, get_primary=False, plot=False):
+def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False):
     # Read in the data and model
     original_orders = HelperFunctions.ReadFits(original, extensions=True, x="wavelength", y="flux", errors="error",
                                                cont="continuum")
@@ -109,6 +113,80 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
     return original_orders
 
 
+
+def Correct(original, corrected, offset=None, get_primary=False, plot=False):
+    hdulist = pyfits.open(corrected)
+    orders = HelperFunctions.ReadExtensionFits(original)
+    import TelluricFitter
+    import GetAtmosphere
+    import os
+    fitter = TelluricFitter.TelluricFitter()
+    fitter.SetObservatory('mcdonald')
+    filenames = [f for f in os.listdir("./") if "GDAS" in f]
+    header = hdulist[0].header
+    height, Pres, Temp, h2o = GetAtmosphere.GetProfile(filenames, header['date-obs'].split("T")[0], header['ut'])
+
+    fitter.EditAtmosphereProfile("Temperature", height, Temp)
+    fitter.EditAtmosphereProfile("Pressure", height, Pres)
+    fitter.EditAtmosphereProfile("H2O", height, h2o)
+    fitter.SetBounds({"resolution": [30000, 50000]})
+
+    if plot:
+        fig = plt.figure(1)
+        ax1 = fig.add_subplot(311)
+        ax2 = fig.add_subplot(312, sharex=ax1)
+        ax3 = fig.add_subplot(313, sharex=ax1)
+    for i, order in enumerate(orders):
+        print "ORDER: ", i
+        # Get atmosphere parameters
+        header = hdulist[i+1].header
+        fitter.data = order.copy()
+        #order = orders[-9]
+        temperature = header['temperature']
+        humidity = header['humidity']
+        ch4 = header['ch4']
+        co2 = header['co2']
+        co = header['co']
+        n2o = header['n2o']
+
+        #Make the model
+        model = fitter.Modeler.MakeModel(temperature=temperature,
+                                         humidity=humidity,
+                                         co2=co2,
+                                         co=co,
+                                         ch4=ch4,
+                                         n2o=n2o,
+                                         lowfreq=1e7/(order.x[-1] + 10),
+                                         highfreq=1e7/(order.x[0] - 10))
+        xgrid = np.linspace(model.x[0], model.x[-1], model.size())
+        model_original = FittingUtilities.RebinData(model, xgrid)
+        model = FittingUtilities.ReduceResolution(model_original, 48000)
+
+        #Do the wavelength correction
+        modelfcn, mean = fitter.FitWavelengthNew(order, model, fitorder=5)
+        model_original.x -= modelfcn(model.x - mean)
+
+        model = fitter.Broaden2(order, model_original)
+
+        order.y /= model.y
+        orders[i] = order.copy()
+
+        if plot:
+            ax1.plot(order.x, order.y/order.cont)
+            ax1.plot(model.x, model.y)
+            ax2.plot(order.x, order.y/order.cont - model.y)
+            ax3.plot(order.x, order.y/(order.cont*model.y))
+
+    if plot:
+        plt.show()
+
+
+
+    return order
+
+
+
+
 def main1():
     primary = False
     plot = True
@@ -180,6 +258,10 @@ def main1():
                 plt.xlabel("Wavelength (nm)")
                 plt.ylabel("Flux")
                 plt.show()
+
+
+
+
 
 
 if __name__ == "__main__":
