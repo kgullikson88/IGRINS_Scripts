@@ -3,15 +3,11 @@ import os
 import FittingUtilities
 
 from astropy.io import fits as pyfits
-from astropy.modeling import fitting, models
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline as spline
 
 import DataStructures
 import HelperFunctions
-import statsmodels.api as sm
-from numpy.polynomial import chebyshev
 
 
 def ReadCorrectedFile(fname, yaxis="model"):
@@ -127,8 +123,8 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
     height, Pres, Temp, h2o = GetAtmosphere.GetProfile(filenames, header['date-obs'].split("T")[0], header['ut'])
 
     fitter.EditAtmosphereProfile("Temperature", height, Temp)
-    fitter.EditAtmosphereProfile("Pressure", height, Pres)
-    fitter.EditAtmosphereProfile("H2O", height, h2o)
+    fitter.EditAtmosphereProfile("Temperature", height, Temp)
+    fitter.EditAtmosphereProfile("Temperature", height, Temp)
     fitter.SetBounds({"resolution": [30000, 50000]})
 
     if plot:
@@ -168,21 +164,23 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
 
         model = fitter.Broaden2(order, model_original)
 
-        order.y /= model.y
-        orders[i] = order.copy()
-
         if plot:
             ax1.plot(order.x, order.y/order.cont)
             ax1.plot(model.x, model.y)
             ax2.plot(order.x, order.y/order.cont - model.y)
             ax3.plot(order.x, order.y/(order.cont*model.y))
 
+        model.y[model.y < 0.05] = (order.y / order.cont)[model.y < 0.05]
+        order.y /= model.y
+        orders[i] = order.copy()
+
     if plot:
-        plt.show()
+        ax1.set_ylim((-0.5, 2.0))
+        ax2.set_ylim((-1.5, 1.5))
+        ax3.set_ylim((-0.5, 2.0))
+        # plt.show()
 
-
-
-    return order
+    return orders
 
 
 
