@@ -1,8 +1,8 @@
 import sys
 import os
 import FittingUtilities
-
 import numpy as np
+
 from astropy.io import fits
 from astropy import units, constants
 
@@ -67,7 +67,7 @@ def EstimateModel():
         outfilename = "Corrected_{0:s}.fits".format(name)
         exists = False
 
-        #Read file
+        # Read file
         orders = HelperFunctions.ReadExtensionFits(fname)
 
         angle = float(header["ZD"])
@@ -360,7 +360,7 @@ def RefineFromEstimate(template="Corrected_{:s}"):
             humidity_low = float(arg.split("=")[1])
         elif "-hhigh" in arg:
             humidity_high = float(arg.split("=")[1])
-        else:
+        elif arg != "-e":
             fileList.append(arg)
 
 
@@ -424,7 +424,7 @@ def RefineFromEstimate(template="Corrected_{:s}"):
         templatefile = template.format(fname)
         outfilename = "Corrected_{:s}-0.fits".format(name)
 
-        #Read file
+        # Read file
         orders = HelperFunctions.ReadExtensionFits(fname)
 
         angle = float(header["ZD"])

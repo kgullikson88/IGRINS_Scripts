@@ -14,7 +14,7 @@ if __name__ == "__main__":
     fileList = []
     extensions = True
     tellurics = False
-    trimsize = 100
+    trimsize = 1
     for arg in sys.argv[1:]:
         if "-e" in arg:
             extensions = False
