@@ -197,7 +197,7 @@ def main1():
         outfilename = "%s_telluric_corrected.fits" % (original.split(".fits")[0])
         print "Outputting to %s" % outfilename
 
-        corrected_orders = Correct(original, corrected, offset=None, get_primary=primary, plot=plot)
+        corrected_orders = Correct_Old(original, corrected, offset=None, get_primary=primary, plot=plot)
 
         column_list = []
         if plot:

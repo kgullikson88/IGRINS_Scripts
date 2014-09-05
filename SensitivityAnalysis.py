@@ -41,4 +41,5 @@ if __name__ == "__main__":
                         resolution=resolution,
                         debug=True,
                         badregions=Search_Fast.badregions,
-                        trimsize=trimsize)
+                        trimsize=trimsize,
+                        modeldir='/media/FreeAgent_Drive/SyntheticSpectra/Sorted/Stellar/NearIR/')
