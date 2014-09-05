@@ -1,9 +1,9 @@
 __author__ = 'Kevin Gullikson'
-import numpy as np
 import FittingUtilities
 import sys
 import os
 
+import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits, ascii
 
@@ -75,6 +75,8 @@ if __name__ == "__main__":
             #denoised, theta = OptimalSmooth(order.copy())
             #denoised.y *= order.cont/order.cont.mean()
             print "Window size = %.4f nm" % theta
+            denoised.cont = FittingUtilities.Continuum(denoised.x, order.y / denoised.y, fitorder=1, lowreject=2,
+                                                       highreject=2)
 
             column = {"wavelength": denoised.x,
                       "flux": order.y / denoised.y,

@@ -103,7 +103,7 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
         data.err /= model.y
         if get_primary:
             data.y /= primary.y
-        original_orders[i] = data.copy()
+        original_orders[i] = data[1:-1].copy()
     if plot:
         plt.show()
     return original_orders

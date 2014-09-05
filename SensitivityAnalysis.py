@@ -20,7 +20,7 @@ if __name__ == "__main__":
     debug = False
     vsini_skip = 10
     vsini_idx = 1
-    trimsize =1
+    trimsize = 100
     for arg in sys.argv[1:]:
         if "-m" in arg:
             companion_file = arg.split("=")[1]
