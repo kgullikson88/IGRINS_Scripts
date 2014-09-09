@@ -12,7 +12,6 @@ from astropy.modeling import models, fitting
 import TelluricFitter
 import HelperFunctions
 import Units
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def RefineWavelength(orders, header, bad_orders, plot=True):
@@ -63,7 +62,7 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
         right = np.searchsorted(model.x, order.x[-1] + 10.0)
         # modelfcn, mean = fitter.FitWavelength(order.copy(), model[left:right], fitorder=7, tol=0.1, linestrength=0.9)
         modelfcn, mean = fitter.FitWavelengthNew(order.copy(), model[left:right], fitorder=4, be_safe=True)
-        #xgrid = (order.x - np.median(order.x))/(order.x[-1] - order.x[0])
+        # xgrid = (order.x - np.median(order.x))/(order.x[-1] - order.x[0])
         order.x += modelfcn(order.x - mean)
         chisq = np.sum((order.y / order.cont - model_spline(order.x)) ** 2)
         if plot:
@@ -153,7 +152,7 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
                                                 highreject=2)
 
         # column = {"wavelength": order.x,
-        #          "flux": order.y,
+        # "flux": order.y,
         #          "continuum": order.cont,
         #          "error": order.err}
         #columns.append(column)
@@ -187,11 +186,12 @@ if __name__ == "__main__":
     humidity = []
     temperature = []
     pressure = []
+    date = os.getcwd().split("/")[-1]
     original_fnames = sorted(
-        ["20140708/SDCH_20140708_{:s}.fits".format(str(i).zfill(4)) for i in range(lownum, highnum + 1)])
+        ["{0:s}/SDCH_{0:s}_{1:s}.fits".format(date, str(i).zfill(4)) for i in range(lownum, highnum + 1)])
     for i, fname in enumerate(original_fnames):
         print "Reading header info from {:s}".format(fname)
-        #Get the observation time
+        # Get the observation time
         header = fits.getheader(fname)
         t = header['DATE-OBS']
         t = "{:s}T{:s}".format(t[:10], t[11:])
@@ -242,7 +242,7 @@ if __name__ == "__main__":
         # zenith_angle.append(90.0 - float(header['ALT']))
         zenith_angle.append(np.arccos(1.0 / float(header['amstart'])) * 180.0 / np.pi)
 
-    #Figure out the average values for each of the quantities
+    # Figure out the average values for each of the quantities
     ZD = np.mean(zenith_angle)
     RH = np.mean(humidity)
     T = np.mean(temperature)
