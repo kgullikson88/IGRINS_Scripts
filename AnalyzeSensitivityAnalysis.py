@@ -151,53 +151,97 @@ def MakePlot(infilename):
         infile.close()
         print "Reading file %s" % infilename
         current_temp = float(lines[4].split()[2])
-        starname = lines[4].split()[0].split("/")[-1].split("_smoothed")[0]
+        fname = lines[4].split()[0]
+        starname = pyfits.getheader(fname)['object']
         detections = 0.0
         numsamples = 0.0
         significance = []
+        starname_dict = {fname: starname}
+        spt_dict = {}
+        current_fname = fname
         for iternum, line in enumerate(lines[4:]):
             segments = line.split()
-            #print segments[2], current_temp
-            #print starname, segments[0]
-            #print iternum, numsamples, '\n'
-            if float(segments[2]) != current_temp or starname not in segments[0] or iternum == 0:
-                if iternum != 0:
-                    #We are on to the next temperature. Save info!
-                    s_spt[starname].append(s_spectype)
-                    s_temp[starname].append(current_temp)
-                    p_spt[starname].append(p_spectype)
-                    p_mass[starname].append(sec_mass / massratio)
-                    s_mass[starname].append(sec_mass)
-                    q[starname].append(massratio)
-                    det_rate[starname].append(detections / numsamples)
-                    sig[starname].append(np.mean(significance))
-                    magdiff[starname].append(2.5 * np.log10(fluxratio))
 
-                    #Reset things
-                    current_temp = float(segments[2])
-                    starname = segments[0].split("/")[-1].split("_smoothed")[0]
-                    numsamples = 0.0
-                    detections = 0.0
-                    significance = []
-
-                #Figure out the time-consuming SpectralType calls
+            fname = segments[0]
+            T2 = float(segments[2])
+            if fname in starname_dict and T2 == current_temp and current_fname == fname:
+                # Do the time-consuming SpectralType calls
                 T1 = float(segments[1])
-                p_spectype = MS.GetSpectralType(MS.Temperature, T1)
-                R1 = MS.Interpolate(MS.Radius, p_spectype)
-                T2 = float(segments[2])
-                s_spectype = MS.GetSpectralType(MS.Temperature, T2)
-                R2 = MS.Interpolate(MS.Radius, s_spectype)
-                fluxratio = (PlotBlackbodies.Planck(vband, T1) / PlotBlackbodies.Planck(vband, T2)).mean() * (
-                                                                                                                 R1 / R2) ** 2
-
-            else:
-                #starname = segments[0].split("/")[-1].split("_smoothed")[0]
+                if T1 in spt_dict:
+                    p_spectype = spt_dict[T1][0]
+                    R1 = spt_dict[T1][1]
+                else:
+                    p_spectype = MS.GetSpectralType(MS.Temperature, T1)
+                    R1 = MS.Interpolate(MS.Radius, p_spectype)
+                    spt_dict[T1] = (p_spectype, R1)
+                if T2 in spt_dict:
+                    s_spectype = spt_dict[T2][0]
+                    R2 = spt_dict[T2][1]
+                else:
+                    s_spectype = MS.GetSpectralType(MS.Temperature, T2)
+                    R2 = MS.Interpolate(MS.Radius, s_spectype)
+                    spt_dict[T2] = (s_spectype, R2)
+                fluxratio = (PlotBlackbodies.Planck(vband, T1) / PlotBlackbodies.Planck(vband, T2)).mean() \
+                            * (R1 / R2) ** 2
                 sec_mass = float(segments[3])
                 massratio = float(segments[4])
+                starname = starname_dict[fname]
+
                 if "y" in segments[6]:
                     detections += 1.
                     significance.append(float(segments[7]))
                 numsamples += 1.
+            else:
+                s_spt[starname].append(s_spectype)
+                s_temp[starname].append(current_temp)
+                p_spt[starname].append(p_spectype)
+                p_mass[starname].append(sec_mass / massratio)
+                s_mass[starname].append(sec_mass)
+                q[starname].append(massratio)
+                det_rate[starname].append(detections / numsamples)
+                sig[starname].append(np.mean(significance))
+                magdiff[starname].append(2.5 * np.log10(fluxratio))
+
+                # Reset things
+                current_temp = T2
+                current_fname = fname
+                fname = segments[0]
+                if fname in starname_dict:
+                    starname = starname_dict[fname]
+                else:
+                    starname = pyfits.getheader(fname)['object']
+                    starname_dict[fname] = starname
+                numsamples = 0.0
+                detections = 0.0
+                significance = []
+
+                #Process this line for the next star
+                T1 = float(segments[1])
+                if T1 in spt_dict:
+                    p_spectype = spt_dict[T1][0]
+                    R1 = spt_dict[T1][1]
+                else:
+                    p_spectype = MS.GetSpectralType(MS.Temperature, T1)
+                    R1 = MS.Interpolate(MS.Radius, p_spectype)
+                    spt_dict[T1] = (p_spectype, R1)
+                if T2 in spt_dict:
+                    s_spectype = spt_dict[T2][0]
+                    R2 = spt_dict[T2][1]
+                else:
+                    s_spectype = MS.GetSpectralType(MS.Temperature, T2)
+                    R2 = MS.Interpolate(MS.Radius, s_spectype)
+                    spt_dict[T2] = (s_spectype, R2)
+                fluxratio = (PlotBlackbodies.Planck(vband, T1) / PlotBlackbodies.Planck(vband, T2)).mean() \
+                            * (R1 / R2) ** 2
+                sec_mass = float(segments[3])
+                massratio = float(segments[4])
+
+                if "y" in segments[6]:
+                    detections += 1.
+                    significance.append(float(segments[7]))
+                numsamples += 1.
+
+
 
 
 
@@ -230,12 +274,12 @@ def MakePlot(infilename):
                     ax = plt.gca()
                     ax.set_ylim(ax.get_ylim()[::-1])
             plt.legend(loc='best')
-            plt.xlabel(labeldict[xaxis])
-            plt.ylabel(labeldict[yaxis])
+            plt.xlabel(labeldict[xaxis], fontsize=15)
+            plt.ylabel(labeldict[yaxis], fontsize=15)
             if "DetectionRate" in yaxis:
                 ax = plt.gca()
                 ax.set_ylim([-0.05, 1.05])
-            plt.title("Sensitivity Analysis")
+            plt.title("Sensitivity Analysis", fontsize=20)
 
     plt.show()
 
