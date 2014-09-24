@@ -63,7 +63,7 @@ if __name__ == "__main__":
     plt.xlabel("Wavelength (nm)", fontsize=15)
     if normalize:
       plt.ylabel("Normalized Flux", fontsize=15)
-      plt.ylim((-0.1, 1.1))
+      plt.ylim((-0.1, 2.0))
     else:
       plt.ylabel("Flux", fontsize=15)
     plt.show()

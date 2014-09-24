@@ -3,6 +3,7 @@ import os
 import FittingUtilities
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from astropy.io import fits
 from astropy import time, units as u
 import numpy as np
