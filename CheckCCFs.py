@@ -1,7 +1,10 @@
 import os
+import sys
 
 import matplotlib
-matplotlib.use( "tkagg" )
+
+if "linux" in sys.platform:
+    matplotlib.use("tkagg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -84,7 +87,7 @@ if __name__ == "__main__":
         leg.get_frame().set_alpha(0.5)
         fig.savefig("Figures/Summary_%s.pdf" % rootfile.split(".fits")[0])
         idx = np.argmax(significance)
-        #ax.plot(Tvals[idx], Zvals[idx], significance[idx], 'x', markersize=25, label="Most Significant")
+        # ax.plot(Tvals[idx], Zvals[idx], significance[idx], 'x', markersize=25, label="Most Significant")
         plt.show()
 
 
