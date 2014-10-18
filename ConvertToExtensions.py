@@ -15,7 +15,7 @@ import HelperFunctions
 import Units
 
 
-def RefineWavelength(orders, header, bad_orders, plot=True):
+def RefineWavelength(orders, header, bad_orders, ap2ord, plot=True):
     humidity = header['HUMIDITY']
     T = (header['AIRTEMP'] - 32.0) * 5.0 / 9.0 + 273.15
     P = header['BARPRESS'] * Units.hPa / Units.inch_Hg
@@ -40,11 +40,13 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
     print "Rebinning model to constant wavelength spacing"
     xgrid = np.linspace(model.x[0], model.x[-1], model.size())
     model = FittingUtilities.RebinData(model, xgrid)
-    print "Reducing resolution of model to R=40000"
-    model = FittingUtilities.ReduceResolution2(model, 40000.0)
+    print "Reducing resolution of model to R=60000"
+    model = FittingUtilities.ReduceResolution2(model, 60000.0)
+    print "Interpolating model"
     model_spline = spline(model.x, model.y)
 
     apertures = np.array([], dtype=np.float)
+    ordernums = np.array([], dtype=np.float)
     pixels = np.array([], dtype=np.float)
     wavelengths = np.array([], dtype=np.float)
     weights = np.array([], dtype=np.float)
@@ -75,6 +77,7 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
         linepixels = np.array([p for p in linepixels if order.y[p] / order.cont[p] > 0.05], dtype=np.int)
         waves = order.x[linepixels]
         apertures = np.hstack((apertures, np.ones(waves.size) * i))
+        ordernums = np.hstack((ordernums, np.ones(waves.size) * ap2ord[i]))
         pixels = np.hstack((pixels, linepixels))
         wavelengths = np.hstack((wavelengths, waves))
         weights = np.hstack((weights, np.ones(waves.size) / chisq))
@@ -85,6 +88,7 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
     p_init = models.Chebyshev2D(5, 4, x_domain=[0, 2048])
     fit_p = fitting.LinearLSQFitter()
     print "Fitting wavelength solution for entire chip with chebyshev polynomial"
+    """
     for offset in range(200):
         for sign in [-1.0, 1.0]:
             ordernums = sign * apertures + offset
@@ -100,10 +104,11 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
 
     print "best sign: ", bestsign
     print "best offset: ", bestoffset
+    """
 
+    p = fit_p(p_init, pixels, ordernums, wavelengths * ordernums, weights)
     if plot:
-        ordernums = bestsign * apertures + bestoffset
-        p = fit_p(p_init, pixels, ordernums, wavelengths * ordernums, weights)
+        # ordernums = bestsign * apertures + bestoffset
         pred = p(pixels, ordernums) / ordernums
         fig3d = plt.figure(2)
         ax3d = fig3d.add_subplot(111, projection='3d')
@@ -113,14 +118,16 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
 
     # Assign the wavelength solution to each order
     for i, order in enumerate(orders):
-        ap = i * bestsign + bestoffset
+        ord = ap2ord[i]
         xgrid = np.arange(order.size(), dtype=np.float)
-        ap_arr = ap * np.ones(xgrid.size, dtype=np.float)
-        wave = p(xgrid, ap_arr) / ap_arr
+        ord_arr = ord * np.ones(xgrid.size, dtype=np.float)
+        wave = p(xgrid, ord_arr) / ord_arr
         if plot:
             ax.plot(order.x, order.y / order.cont, 'k-', alpha=0.4)
             ax.plot(wave, order.y / order.cont, 'g-', alpha=0.4)
             ax.plot(wave, model_spline(wave), 'r-', alpha=0.6)
+        orders[i].x = wave
+
 
     if plot:
         plt.show()
@@ -129,38 +136,39 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
 
 
 def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
-    orders = HelperFunctions.ReadFits(filename)
+    orders, wavefields = HelperFunctions.ReadFits(filename, return_aps=True)
     errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
     blazes = np.loadtxt(blazefile)
     header_info = []
     ret_orders = []
+    ap2ord = {}  #Dictionary giving correspondence from aperture number to echelle order number
     for i, order in enumerate(orders):
-        #Remove nans, that the pipeline puts in there
+        # Remove nans, that the pipeline puts in there
         goodindices = np.where(-np.isnan(order.y))[0]
-	order = order[goodindices]
-	order.err = np.sqrt(errors[i].y[goodindices])
-	
+        goodindices = goodindices[(goodindices > 150) & (goodindices < order.size() - 100)]
+        order = order[goodindices]
+        order.err = np.sqrt(errors[i].y[goodindices])
+
         # Convert to air wavelengths!
         wave_A = order.x * u.nm.to(u.angstrom)
         n = 1.0 + 2.735182e-4 + 131.4182 / wave_A ** 2 + 2.76249e8 / wave_A ** 4
         order.x /= n
 
         # Divide by blaze function
-        blaze = blazes[:, i + skip][goodindices]
+        blaze = blazes[:, i][goodindices]
         blaze[blaze < 1e-3] = 1e-3
         order.y /= blaze
         order.err /= blaze
 
-        order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=5, lowreject=1.5,
-                                                highreject=2)
+        # Fit continuum
+        order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=5, lowreject=1.5, highreject=2)
 
-        # column = {"wavelength": order.x,
-        # "flux": order.y,
-        #          "continuum": order.cont,
-        #          "error": order.err}
-        #columns.append(column)
+        # Get the echelle order number from the wavefields
+        order_number = int(wavefields[i][1])
+
         ret_orders.append(order.copy())
-    return ret_orders
+        ap2ord[i] = order_number
+    return ret_orders, ap2ord
 
 
 if __name__ == "__main__":
@@ -199,7 +207,7 @@ if __name__ == "__main__":
         t = header['DATE-OBS']
         t = "{:s}T{:s}".format(t[:10], t[11:])
         date = t.partition('T')[0]
-        #print t
+        # print t
         t_jd = time.Time(t, format='isot', scale='utc').jd
         if i == len(original_fnames) - 1:
             exptime = float(header['EXPTIME']) * u.s.to(u.day)
@@ -212,6 +220,7 @@ if __name__ == "__main__":
         #Read in weather information (archived data is downloaded from weather.as.utexas.edu)
         homedir = os.environ["HOME"]
         weather_file = homedir + "/School/Research/Useful_Datafiles/Weather.dat"
+        weather_file = "Weather.dat"
         infile = open(weather_file)
         lines = infile.readlines()
         infile.close()
@@ -252,7 +261,7 @@ if __name__ == "__main__":
     P = np.mean(pressure)
     t_jd = (min(date_obs) + max(date_obs)) / 2.0
 
-    #Prepare the fits header
+    # Prepare the fits header
     outfilename = "{:s}.fits".format(objname.replace(" ", "_"))
     print "Outputting to {:s}".format(outfilename)
     pri_hdu = fits.PrimaryHDU()
@@ -278,10 +287,11 @@ if __name__ == "__main__":
         blazefile = "K_BLAZE.DAT"
         skip = 0
         bad_orders = [0, 1, 3, 19, 20]
-    orders = ReadFile(filename, blazefile, skip)
+    orders, ap2ord = ReadFile(filename, blazefile, skip)
+    print ap2ord
 
     # Wavelength calibration
-    orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)
+    #orders = RefineWavelength(orders, pri_hdu.header, bad_orders, ap2ord, plot=plot)
 
     #Convert to columns
     columns = []
@@ -303,10 +313,10 @@ if __name__ == "__main__":
         blazefile = "H_BLAZE.DAT"
         skip = 2
         bad_orders = [0, 21, 22]
-    orders = ReadFile(filename, blazefile, skip)
+    orders, ap2ord = ReadFile(filename, blazefile, skip)
 
     #Wavelength calibration
-    orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)
+    #orders = RefineWavelength(orders, pri_hdu.header, bad_orders, ap2ord, plot=plot)
 
 
     #Convert to columns
