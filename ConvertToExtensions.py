@@ -130,21 +130,23 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
 
 def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
     orders = HelperFunctions.ReadFits(filename)
+    errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
     blazes = np.loadtxt(blazefile)
     header_info = []
     ret_orders = []
-    print len(orders)
     for i, order in enumerate(orders):
-        # Cut off the edges, where the blaze is really bad
-        order = order[150:-100]
-
+        #Remove nans, that the pipeline puts in there
+        goodindices = np.where(-np.isnan(order.y))[0]
+	order = order[goodindices]
+	order.err = np.sqrt(errors[i].y[goodindices])
+	
         # Convert to air wavelengths!
         wave_A = order.x * u.nm.to(u.angstrom)
         n = 1.0 + 2.735182e-4 + 131.4182 / wave_A ** 2 + 2.76249e8 / wave_A ** 4
         order.x /= n
 
         # Divide by blaze function
-        blaze = blazes[:, i + skip][150:-100]
+        blaze = blazes[:, i + skip][goodindices]
         blaze[blaze < 1e-3] = 1e-3
         order.y /= blaze
         order.err /= blaze
