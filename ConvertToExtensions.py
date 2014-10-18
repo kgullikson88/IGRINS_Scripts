@@ -176,6 +176,7 @@ if __name__ == "__main__":
     lownum = None
     highnum = None
     plot = False
+    overwrite = True
     for arg in sys.argv[1:]:
         if "num" in arg:
             r = arg.partition("=")[-1].split("-")
@@ -183,6 +184,8 @@ if __name__ == "__main__":
             highnum = int(r[1])
         elif "-p" in arg:
             plot = True
+        elif "-no-overwrite" in arg:
+            overwrite = False
         else:
             filename = arg
 
@@ -220,7 +223,6 @@ if __name__ == "__main__":
         #Read in weather information (archived data is downloaded from weather.as.utexas.edu)
         homedir = os.environ["HOME"]
         weather_file = homedir + "/School/Research/Useful_Datafiles/Weather.dat"
-        weather_file = "Weather.dat"
         infile = open(weather_file)
         lines = infile.readlines()
         infile.close()
@@ -263,6 +265,15 @@ if __name__ == "__main__":
 
     # Prepare the fits header
     outfilename = "{:s}.fits".format(objname.replace(" ", "_"))
+    if not overwrite:
+        done = False
+        i = 1
+        while not done:
+            if outfilename in os.listdir("./"):
+                outfilename = "{:s}_{:d}.fits".format(objname.replace(" ", "_"), i)
+                i += 1
+            else:
+                done = True
     print "Outputting to {:s}".format(outfilename)
     pri_hdu = fits.PrimaryHDU()
     pri_hdu.header['OBJECT'] = objname
