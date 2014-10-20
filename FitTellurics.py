@@ -1,8 +1,8 @@
 import sys
 import os
 import FittingUtilities
-import numpy as np
 
+import numpy as np
 from astropy.io import fits
 from astropy import units, constants
 
@@ -91,7 +91,10 @@ def EstimateModel():
                             "pressure": pressure,
                             "resolution": resolution,
                             "temperature": temperature,
-                            "o2": 2.12e5})
+                            "o2": 2.12e5,
+                            "co": 0.14,
+                            "co2": 368.5,
+                            "n2o": 0.32})
         fitter.FitVariable({"h2o": humidity,
                             "ch4": 1.8,
                             "temperature": temperature})
@@ -341,7 +344,7 @@ def EstimateModel():
         logfile.close()
 
 
-def RefineFromEstimate(template="Corrected_{:s}"):
+def FitAll():
     # Initialize fitter
     fitter = TelluricFitter.TelluricFitter()
     fitter.SetObservatory("McDonald")
@@ -421,7 +424,6 @@ def RefineFromEstimate(template="Corrected_{:s}"):
         logfile = open(u"fitlog_{0:s}.txt".format(fname.split(".fits")[0]), "a")
         logfile.write(u"Fitting file {0:s}\n".format(fname))
         name = fname.split(".fits")[0]
-        templatefile = template.format(fname)
         outfilename = "Corrected_{:s}-0.fits".format(name)
 
         # Read file
@@ -429,7 +431,14 @@ def RefineFromEstimate(template="Corrected_{:s}"):
 
         angle = float(header["ZD"])
         resolution = 40000.0
+        humidity = header['HUMIDITY']
+        T_fahrenheit = header['AIRTEMP']
         pressure = header['BARPRESS'] * Units.hPa / Units.inch_Hg
+        temperature = (T_fahrenheit - 32.0) * 5.0 / 9.0 + 273.15
+        o2 = 2.12e5
+        co = 0.14
+        co2 = 368.5
+        n2o = 0.32
 
         if edit_atmosphere:
             filenames = [f for f in os.listdir("./") if "GDAS" in f]
@@ -440,35 +449,22 @@ def RefineFromEstimate(template="Corrected_{:s}"):
             fitter.EditAtmosphereProfile("Pressure", height, Pres)
             fitter.EditAtmosphereProfile("H2O", height, h2o)
 
-
-        #Get values from the template file
-        header = fits.getheader(templatefile)
-        humidity = header['HUMIDITY']
-        temperature = header['TEMPERATURE']
-        ch4 = header['CH4']
-        co2 = header['CO2']
-        co = header['CO']
-        n2o = header['N2O']
-
-
         #Adjust fitter values
         fitter.AdjustValue({"angle": angle,
                             "pressure": pressure,
                             "resolution": resolution,
                             "temperature": temperature,
-                            "o2": 2.12e5,
-                            "h2o": humidity,
-                            "ch4": ch4,
-                            "co2": co2,
+                            "o2": o2,
                             "co": co,
+                            "co2": co2,
                             "n2o": n2o})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
                           "pressure": [pressure - 30, pressure + 100],
-                          "ch4": [ch4 * 0.5, ch4 * 2],
-                          "co2": [co2 * 0.5, co2 * 2],
-                          "n2o": [n2o * 0.5, n2o * 2],
-                          "co": [co * 0.5, co * 2],
+                          "ch4": [0.0, np.inf],
+                          "co2": [0.0, np.inf],
+                          "n2o": [0.0, np.inf],
+                          "co": [0.0, np.inf],
                           "resolution": [30000, 50000]})
 
 
@@ -476,17 +472,20 @@ def RefineFromEstimate(template="Corrected_{:s}"):
         fitter.IgnoreRegions(badregions)
 
         fitter.continuum_fit_order = 3
+        fitter.resolution_fit_mode = 'SVD'
 
 
         #Start fitting, order by order
         for i, order in enumerate(orders):
+            fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
+                                "waveend": order.x[-1] + 5.0})
             if i + 1 in [1, 22, 23, 24, 25, 44]:
-                hdulist = fits.open(templatefile)
-                data = hdulist[i + 1].data
-                model = DataStructures.xypoint(x=data["wavelength"],
-                                               y=data["model"])
-                primary = DataStructures.xypoint(x=data["wavelength"],
-                                                 y=data["primary"])
+                fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
+                fitter.ImportData(order.copy())
+                primary, model = fitter.GenerateModel(fitpars,
+                                                      separate_primary=True,
+                                                      return_resolution=False)
+
             else:
                 # Figure out which molecules to fit
                 for molec in ["h2o", "co2", "co", "ch4", "n2o"]:
@@ -497,8 +496,6 @@ def RefineFromEstimate(template="Corrected_{:s}"):
                             fitter.FitVariable({molec: eval(molec)})
                 fitter.DisplayVariables()
 
-                fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
-                                    "waveend": order.x[-1] + 5.0})
                 order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=3, lowreject=9, highreject=10)
                 primary, model = fitter.Fit(data=order.copy(),
                                             resolution_fit_mode="SVD",
@@ -538,7 +535,4 @@ def RefineFromEstimate(template="Corrected_{:s}"):
 
 
 if __name__ == "__main__":
-    if "-e" in sys.argv[1:]:
-        print "Estimating parameters"
-        EstimateModel()
-    RefineFromEstimate()
+    FitAll()
