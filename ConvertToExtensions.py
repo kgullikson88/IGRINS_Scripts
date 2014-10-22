@@ -130,11 +130,15 @@ def RefineWavelength(orders, header, bad_orders, plot=True):
 
 def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
     orders = HelperFunctions.ReadFits(filename)
+    errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
     blazes = np.loadtxt(blazefile)
     header_info = []
     ret_orders = []
     print len(orders)
     for i, order in enumerate(orders):
+        # Put in the correct uncertainty
+        order.err = np.sqrt(errors[i])
+
         # Cut off the edges, where the blaze is really bad
         order = order[150:-100]
 
@@ -154,7 +158,7 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
 
         # column = {"wavelength": order.x,
         # "flux": order.y,
-        #          "continuum": order.cont,
+        # "continuum": order.cont,
         #          "error": order.err}
         #columns.append(column)
         ret_orders.append(order.copy())
@@ -197,7 +201,7 @@ if __name__ == "__main__":
         t = header['DATE-OBS']
         t = "{:s}T{:s}".format(t[:10], t[11:])
         date = t.partition('T')[0]
-        #print t
+        # print t
         t_jd = time.Time(t, format='isot', scale='utc').jd
         if i == len(original_fnames) - 1:
             exptime = float(header['EXPTIME']) * u.s.to(u.day)
@@ -250,7 +254,7 @@ if __name__ == "__main__":
     P = np.mean(pressure)
     t_jd = (min(date_obs) + max(date_obs)) / 2.0
 
-    #Prepare the fits header
+    # Prepare the fits header
     outfilename = "{:s}.fits".format(objname.replace(" ", "_"))
     print "Outputting to {:s}".format(outfilename)
     pri_hdu = fits.PrimaryHDU()
