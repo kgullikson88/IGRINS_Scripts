@@ -316,7 +316,7 @@ def Convert(filename, maxnods, overwrite=False):
     #orders = RefineWavelength(orders, pri_hdu.header, bad_orders, ap2ord, plot=plot)
 
     #Wavelength calibration
-    orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)
+    # orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)
 
     # Convert to columns
     for order in orders:
