@@ -439,6 +439,7 @@ def FitAll():
         co = 0.14
         co2 = 368.5
         n2o = 0.32
+        ch4 = 1.8
 
         if edit_atmosphere:
             filenames = [f for f in os.listdir("./") if "GDAS" in f]
@@ -457,14 +458,15 @@ def FitAll():
                             "o2": o2,
                             "co": co,
                             "co2": co2,
-                            "n2o": n2o})
+                            "n2o": n2o,
+			    "ch4": ch4})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
                           "pressure": [pressure - 30, pressure + 100],
-                          "ch4": [0.0, np.inf],
-                          "co2": [0.0, np.inf],
-                          "n2o": [0.0, np.inf],
-                          "co": [0.0, np.inf],
+                          "ch4": [0.0, 10.0],
+                          "co2": [0.0, 1000.0],
+                          "n2o": [0.0, 10.0],
+                          "co": [0.0, 10.0],
                           "resolution": [30000, 50000]})
 
 
@@ -479,12 +481,17 @@ def FitAll():
         for i, order in enumerate(orders):
             fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
                                 "waveend": order.x[-1] + 5.0})
+            print "\n*****  Fitting order {}  ********\n".format(i+1)
             if i + 1 in [1, 22, 23, 24, 25, 44]:
                 fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
                 fitter.ImportData(order.copy())
-                primary, model = fitter.GenerateModel(fitpars,
-                                                      separate_primary=True,
-                                                      return_resolution=False)
+                model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
+                model = FittingUtilities.RebinData(model, order.x)
+                primary = model.copy()
+                primary.y = np.ones(primary.size())
+                #primary, model = fitter.GenerateModel(fitpars,
+                #                                      separate_primary=True,
+                #                                      return_resolution=False)
 
             else:
                 # Figure out which molecules to fit
