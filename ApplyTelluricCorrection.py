@@ -223,19 +223,14 @@ def main1():
 
 
         for corrected in corrected_files:
-            original = corrected.split("Corrected_")[-1]  #.split("-")[0] + ".fits"
+            original = corrected.split("Corrected_")[-1].split("-")[0] + ".fits"
 
             print corrected, original
-            header = pyfits.getheader(original)
-            if header['imagetyp'].strip().lower() != 'object' or "solar" in header['object'].lower():
-                print "Skipping file %s, with imagetype = %s and object = %s" % (
-                original, header['imagetyp'], header['object'])
-                continue
+
+            corrected_orders = Correct_Old(original, corrected, offset=None, plot=plot)
 
             outfilename = "{0:s}_telluric_corrected.fits".format(original.split(".fits")[0])
             print "Outputting to %s" % outfilename
-
-            corrected_orders = Correct(original, corrected, offset=None, plot=plot)
 
             column_list = []
             if plot:
