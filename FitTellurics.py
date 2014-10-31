@@ -1,6 +1,7 @@
 import sys
 import os
 import FittingUtilities
+import gc
 
 import numpy as np
 from astropy.io import fits
@@ -345,10 +346,6 @@ def EstimateModel():
 
 
 def FitAll():
-    # Initialize fitter
-    fitter = TelluricFitter.TelluricFitter()
-    fitter.SetObservatory("McDonald")
-
     fileList = []
     start = 0
     end = 999
@@ -417,6 +414,10 @@ def FitAll():
 
     # START LOOPING OVER INPUT FILES
     for fname in fileList:
+        # Initialize fitter
+        fitter = TelluricFitter.TelluricFitter()
+        fitter.SetObservatory("McDonald")
+
         print "Fitting file {0:s}".format(fname)
         # Make sure this file is an object file
         header = fits.getheader(fname)
@@ -475,7 +476,6 @@ def FitAll():
 
         fitter.continuum_fit_order = 3
         fitter.resolution_fit_mode = 'SVD'
-
 
         #Start fitting, order by order
         for i, order in enumerate(orders):
@@ -539,7 +539,8 @@ def FitAll():
                                                          outfilename,
                                                          mode="append",
                                                          headers_info=[header, ])
-
+        del fitter
+        gc.collect()
 
 if __name__ == "__main__":
     FitAll()
