@@ -1,7 +1,8 @@
 import sys
+import os
 
 import GenericSearch
-
+import pandas
 
 # Define regions contaminated by telluric residuals or other defects. We will not use those regions in the cross-correlation
 badregions = [[0, 1510],  # Blue end of H band (lots of water absorption)
@@ -13,9 +14,20 @@ badregions = [[0, 1510],  # Blue end of H band (lots of water absorption)
               [2313, 2350]]
 
 
+def add_oh_lines(oh_file, badregions=[], minstrength=1.0, tol=0.05):
+    oh_data = pandas.read_csv(oh_file, header=False, sep=" ", skipinitialspace=True, names=['wave', 'strength'])
+    oh = oh_data[oh_data['strength'] > minstrength]
+    n = 1.0 + 2.735182e-4 + 131.4182 / oh['wave'] ** 2 + 2.76249e8 / oh['wave'] ** 4
+    oh['wave'] = oh['wave'] / (n * 10.0)
+    for wave in oh['wave'].values:
+        badregions.append([wave - tol, wave + tol])
+    return badregions
+
+
 if __name__ == "__main__":
     #Parse command line arguments:
     fileList = []
+    interp_regions = []
     extensions = True
     tellurics = False
     trimsize = 100
@@ -27,6 +39,10 @@ if __name__ == "__main__":
         else:
             fileList.append(arg)
 
+    # Add strong oh lines to interp_regions
+    oh_file = "{}/School/Research/IGRINS_data/plp/master_calib/ohlines.dat".format(os.environ['HOME'])
+    interp_regions = add_oh_lines(oh_file, badregions=interp_regions)
+
     GenericSearch.CompanionSearch(fileList,
                                   extensions=extensions,
                                   resolution=45000.0,
@@ -36,8 +52,9 @@ if __name__ == "__main__":
                                   vsini_values=[1.0,],
                                   logg_values=[3.5,],
                                   vbary_correct=False,
-				  debug=False,
-				  badregions=badregions,
+                                  debug=False,
+                                  badregions=badregions,
+                                  interp_regions=interp_regions,
                                   modeldir='/Volumes/DATADRIVE/Stellar_Models/Sorted/Stellar/NearIR/')
 
 
