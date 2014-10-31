@@ -55,7 +55,8 @@ if __name__ == "__main__":
                                   debug=False,
                                   badregions=badregions,
                                   interp_regions=interp_regions,
-                                  modeldir='/Volumes/DATADRIVE/Stellar_Models/Sorted/Stellar/NearIR/')
+                                  modeldir='/Volumes/DATADRIVE/Stellar_Models/Sorted/Stellar/NearIR/',
+                                  addmode="weighted")
 
 
 
