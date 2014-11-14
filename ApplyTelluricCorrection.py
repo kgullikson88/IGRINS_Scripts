@@ -90,7 +90,7 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
         elif model.size() > data.size():
             sys.exit("Error! Model size (%i) is larger than data size (%i)" % (model.size(), data.size()))
 
-        #if np.sum((model.x-data.x)**2) > 1e-8:
+        # if np.sum((model.x-data.x)**2) > 1e-8:
         #  model = FittingUtilities.RebinData(model, data.x)
 
         data.y[data.y / data.cont < 1e-5] = 1e-5 * data.cont[data.y / data.cont < 1e-5]
@@ -109,13 +109,13 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
     return original_orders
 
 
-
 def Correct(original, corrected, offset=None, get_primary=False, plot=False):
     hdulist = pyfits.open(corrected)
     orders = HelperFunctions.ReadExtensionFits(original)
     import TelluricFitter
     import GetAtmosphere
     import os
+
     fitter = TelluricFitter.TelluricFitter()
     fitter.SetObservatory('mcdonald')
     filenames = [f for f in os.listdir("./") if "GDAS" in f]
@@ -135,9 +135,9 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
     for i, order in enumerate(orders):
         print "ORDER: ", i
         # Get atmosphere parameters
-        header = hdulist[i+1].header
+        header = hdulist[i + 1].header
         fitter.data = order.copy()
-        #order = orders[-9]
+        # order = orders[-9]
         temperature = header['temperature']
         humidity = header['humidity']
         ch4 = header['ch4']
@@ -152,8 +152,8 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
                                          co=co,
                                          ch4=ch4,
                                          n2o=n2o,
-                                         lowfreq=1e7/(order.x[-1] + 10),
-                                         highfreq=1e7/(order.x[0] - 10))
+                                         lowfreq=1e7 / (order.x[-1] + 10),
+                                         highfreq=1e7 / (order.x[0] - 10))
         xgrid = np.linspace(model.x[0], model.x[-1], model.size())
         model_original = FittingUtilities.RebinData(model, xgrid)
         model = FittingUtilities.ReduceResolution(model_original, 48000)
@@ -165,10 +165,10 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
         model = fitter.Broaden2(order, model_original)
 
         if plot:
-            ax1.plot(order.x, order.y/order.cont)
+            ax1.plot(order.x, order.y / order.cont)
             ax1.plot(model.x, model.y)
-            ax2.plot(order.x, order.y/order.cont - model.y)
-            ax3.plot(order.x, order.y/(order.cont*model.y))
+            ax2.plot(order.x, order.y / order.cont - model.y)
+            ax3.plot(order.x, order.y / (order.cont * model.y))
 
         model.y[model.y < 0.05] = (order.y / order.cont)[model.y < 0.05]
         order.y /= model.y
@@ -183,11 +183,9 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
     return orders
 
 
-
-
 def main1():
     primary = False
-    plot = True
+    plot = False
     if len(sys.argv) > 2:
         original = sys.argv[1]
         corrected = sys.argv[2]
@@ -221,7 +219,6 @@ def main1():
         allfiles = os.listdir("./")
         corrected_files = [f for f in allfiles if "Corrected_" in f and f.endswith("-0.fits")]
 
-
         for corrected in corrected_files:
             original = corrected.split("Corrected_")[-1].split("-")[0] + ".fits"
 
@@ -238,7 +235,7 @@ def main1():
             for i, data in enumerate(corrected_orders):
                 if plot:
                     plt.plot(data.x, data.y / data.cont)
-                #Set up data structures for OutputFitsFile
+                # Set up data structures for OutputFitsFile
                 columns = {"wavelength": data.x,
                            "flux": data.y,
                            "continuum": data.cont,
@@ -251,10 +248,6 @@ def main1():
                 plt.xlabel("Wavelength (nm)")
                 plt.ylabel("Flux")
                 plt.show()
-
-
-
-
 
 
 if __name__ == "__main__":

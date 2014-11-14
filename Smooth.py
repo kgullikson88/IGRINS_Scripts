@@ -15,7 +15,7 @@ if __name__ == "__main__":
     fileList = []
     plot = False
     vsini_file = "%s/School/Research/Useful_Datafiles/Vsini.csv" % (os.environ["HOME"])
-    vsini_skip = 10
+    vsini_skip = 9
     vsini_idx = 1
     for arg in sys.argv[1:]:
         if "-p" in arg:
@@ -41,14 +41,14 @@ if __name__ == "__main__":
         header = fits.getheader(fname)
         starname = header["object"]
         for data in vsini_data:
-            if data[0] == starname:
+            if data[0].strip().lower() == starname.strip().lower():
                 vsini = abs(float(data[vsini_idx]))
                 break
         else:
             sys.exit("Cannot find %s in the vsini data: %s" % (starname, vsini_file))
         print starname, vsini
 
-        #Begin looping over the orders
+        # Begin looping over the orders
         column_list = []
         header_list = []
         for i, order in enumerate(orders):
