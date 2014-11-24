@@ -1,9 +1,9 @@
 import sys
 import os
 import FittingUtilities
+import warnings
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from astropy.io import fits
 from astropy import time, units as u
 import numpy as np
@@ -136,7 +136,15 @@ def RefineWavelength(orders, header, bad_orders, ap2ord, plot=True):
 
 def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
     orders, wavefields = HelperFunctions.ReadFits(filename, return_aps=True)
-    errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
+    try:
+        errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
+    except IOError:
+        warnings.warn("No Variance file found. Falling back to using the sqrt of the flux")
+        errors = []
+        for order in orders:
+            error = order.copy()
+            error.y = np.sqrt(order.y)
+            errors.append(error.copy())
     blazes = np.loadtxt(blazefile)
     header_info = []
     ret_orders = []
@@ -146,7 +154,7 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
         goodindices = np.where(-np.isnan(order.y))[0]
         goodindices = goodindices[(goodindices > 150) & (goodindices < order.size() - 100)]
         order = order[goodindices]
-        order.err = np.sqrt(errors[i].y[goodindices])
+        order.err = errors[i].y[goodindices]
 
         # Convert to air wavelengths!
         wave_A = order.x * u.nm.to(u.angstrom)
@@ -188,6 +196,8 @@ def Convert(filename, maxnods, overwrite=False):
         header = fits.getheader(fname)
         if i == 0:
             objname = header['OBJECT']
+            ra = header['RATEL']
+            dec = header['DECTEL']
         elif header['OBJECT'] != objname:
             # We have hit a new target.
             print "New object name ({}). Expected {}".format(header['object'], objname)
@@ -263,12 +273,17 @@ def Convert(filename, maxnods, overwrite=False):
     print "Outputting to {:s}".format(outfilename)
     pri_hdu = fits.PrimaryHDU()
     pri_hdu.header['OBJECT'] = objname
+    pri_hdu.header['RA'] = ra
+    pri_hdu.header['DEC'] = dec
+    pri_hdu.header['JD'] = t_jd
     pri_hdu.header['DATE-OBS'] = time.Time(t_jd, format='jd').isot
     pri_hdu.header['UT'] = pri_hdu.header['DATE-OBS'].split("T")[-1]
     pri_hdu.header['HUMIDITY'] = RH
     pri_hdu.header['AIRTEMP'] = T
     pri_hdu.header['BARPRESS'] = P
     pri_hdu.header['ZD'] = ZD
+    for i, fname in enumerate(original_fnames):
+        pri_hdu.header['NODFILE{}'.format(i + 1)] = fname
     hdulist = fits.HDUList([pri_hdu, ])
 
     """
@@ -367,8 +382,8 @@ if __name__ == "__main__":
     # If file_list is empty, do all using the files in the current directory
     file_list = sorted([f for f in os.listdir("./") if f.startswith("SDCH") and f.endswith("spec.fits")])
     num_list = [int(f.split("_")[-1][:4]) for f in file_list]
-    nod_list = [num_list[i + 1] - num_list[i] for i in range(len(num_list) - 1)]
-    nod_list.append(maxnods)
+    nod_list = [min(maxnods, num_list[i + 1] - num_list[i]) for i in range(len(num_list) - 1)]
+    # nod_list.append(maxnods)
 
     for filename, nods in zip(file_list, nod_list):
         print filename, nods
