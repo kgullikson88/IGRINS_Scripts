@@ -25,6 +25,7 @@ import HelperFunctions
 import sys
 import Units
 import GetAtmosphere
+import FittingUtilities
 
 
 def ReadModels(beforefile, afterfile, T='TEMPERATURE', RH='HUMIDITY', ch4='CH4', co2='CO2', co='CO', n2o='N2O'):
@@ -98,11 +99,10 @@ def GetParameters(datafile):
     before_pars, after_pars = ReadModels(beforefile, afterfile)
 
     # Interpolate all the parameters to the time of observation
-    m = (after_pars - before_pars)/(obstimes[after_idx]- obstimes[before_idx])
-    pars = m*(jd - obstimes[before_idx]) + before_pars
+    m = (after_pars - before_pars) / (obstimes[after_idx] - obstimes[before_idx])
+    pars = m * (jd - obstimes[before_idx]) + before_pars
 
     return pars
-
 
 
 def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
@@ -119,13 +119,13 @@ def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
     zd = header['ZD']
     pressure = header['BARPRESS'] * Units.hPa / Units.inch_Hg
 
-    #Initialize the fitter
+    # Initialize the fitter
     fitter = TelluricFitter.TelluricFitter()
     fitter.continuum_fit_order = 3
-    fitter.resolution_fit_mode="SVD"
+    fitter.resolution_fit_mode = "SVD"
     fitter.adjust_wave = "model"
     fitter.wavelength_fit_order = 4
-    fitter.fit_source=True
+    fitter.fit_source = True
     fitter.SetBounds({"resolution": [30000, 50000]})
 
     if edit_atmosphere:
@@ -155,7 +155,14 @@ def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
                             "co2": pars.iloc[i]['CO2'],
                             "co": pars.iloc[i]['CO'],
                             "n2o": pars.iloc[i]['N2O']})
-        model = fitter.GenerateModel([])
+        if i + 1 in [1, 22, 23, 24, 25, 44]:
+            fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
+            model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
+            model = FittingUtilities.RebinData(model, order.x)
+            primary = model.copy()
+            primary.y = np.ones(primary.size())
+        else:
+            model = fitter.GenerateModel([])
 
         # Just set equal to the data if there is a huge amount of absorption
         badindices = np.where(np.logical_or(order.y <= 0, model.y < 0.05))[0]
@@ -163,9 +170,9 @@ def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
         model.y[model.y < 1e-5] = 1e-5
 
         if plot:
-            axtop.plot(order.x, order.y/order.cont, 'k-', alpha=0.4)
+            axtop.plot(order.x, order.y / order.cont, 'k-', alpha=0.4)
             axtop.plot(model.x, model.y, 'r-', alpha=0.6)
-            axbot.plot(order.x, order.y/(order.cont*model.y), 'k-', alpha=0.4)
+            axbot.plot(order.x, order.y / (order.cont * model.y), 'k-', alpha=0.4)
 
         order.y /= model.y
         corrected_orders.append(order.copy())
@@ -178,12 +185,10 @@ def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
     return corrected_orders
 
 
-
-
 if __name__ == "__main__":
     fileList = []
-    plot = True
-    atmos=True
+    plot = False
+    atmos = True
     for arg in sys.argv[1:]:
         if 1:
             fileList.append(arg)
@@ -196,10 +201,10 @@ if __name__ == "__main__":
 
         column_list = []
         for i, data in enumerate(corrected_orders):
-            #Set up data structures for OutputFitsFile
+            # Set up data structures for OutputFitsFile
             columns = {"wavelength": data.x,
-                        "flux": data.y,
-                        "continuum": data.cont,
-                        "error": data.err}
+                       "flux": data.y,
+                       "continuum": data.cont,
+                       "error": data.err}
             column_list.append(columns)
         HelperFunctions.OutputFitsFileExtensions(column_list, fname, outfilename, mode="new")

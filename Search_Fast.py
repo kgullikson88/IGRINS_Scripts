@@ -1,10 +1,8 @@
 import sys
 import os
 
-import pandas
-
 import GenericSearch
-
+import pandas
 
 # Define regions contaminated by telluric residuals or other defects. We will not use those regions in the cross-correlation
 badregions = [[0, 1510],  # Blue end of H band (lots of water absorption)
@@ -58,13 +56,12 @@ if __name__ == "__main__":
                                   resolution=45000.0,
                                   trimsize=trimsize,
                                   vsini_values=[1.0, 10.0, 20.0, 30.0, 40.0],
-                                  Tvalues=[4000, ],
                                   observatory="McDonald",
                                   vbary_correct=True,
                                   debug=False,
                                   badregions=badregions,
                                   interp_regions=interp_regions,
-                                  modeldir=modeldir)
+                                  modeldir='/Volumes/DATADRIVE/Stellar_Models/Sorted/Stellar/NearIR/')
 
 
 
