@@ -91,7 +91,7 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
             sys.exit("Error! Model size (%i) is larger than data size (%i)" % (model.size(), data.size()))
 
         # if np.sum((model.x-data.x)**2) > 1e-8:
-        #  model = FittingUtilities.RebinData(model, data.x)
+        # model = FittingUtilities.RebinData(model, data.x)
 
         data.y[data.y / data.cont < 1e-5] = 1e-5 * data.cont[data.y / data.cont < 1e-5]
         badindices = np.where(np.logical_or(data.y <= 0, model.y < 0.05))[0]
@@ -145,7 +145,7 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
         co = header['co']
         n2o = header['n2o']
 
-        #Make the model
+        # Make the model
         model = fitter.Modeler.MakeModel(temperature=temperature,
                                          humidity=humidity,
                                          co2=co2,
@@ -241,7 +241,7 @@ def main1():
                            "continuum": data.cont,
                            "error": data.err}
                 column_list.append(columns)
-            HelperFunctions.OutputFitsFileExtensions(column_list, corrected, outfilename, mode="new")
+            HelperFunctions.OutputFitsFileExtensions(column_list, original, outfilename, mode="new")
 
             if plot:
                 plt.title(original)
