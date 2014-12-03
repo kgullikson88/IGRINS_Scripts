@@ -87,7 +87,7 @@ def EstimateModel():
             fitter.EditAtmosphereProfile("Pressure", height, Pres)
             fitter.EditAtmosphereProfile("H2O", height, h2o)
 
-        #Adjust fitter values
+        # Adjust fitter values
         fitter.AdjustValue({"angle": angle,
                             "pressure": pressure,
                             "resolution": resolution,
@@ -451,16 +451,17 @@ def FitAll():
             fitter.EditAtmosphereProfile("Pressure", height, Pres)
             fitter.EditAtmosphereProfile("H2O", height, h2o)
 
-        #Adjust fitter values
+        # Adjust fitter values
         fitter.AdjustValue({"angle": angle,
                             "pressure": pressure,
                             "resolution": resolution,
                             "temperature": temperature,
+                            "h2o": humidity,
                             "o2": o2,
                             "co": co,
                             "co2": co2,
                             "n2o": n2o,
-			    "ch4": ch4})
+                            "ch4": ch4})
         fitter.SetBounds({"h2o": [humidity_low, humidity_high],
                           "temperature": [temperature - 10, temperature + 10],
                           "pressure": [pressure - 30, pressure + 100],
@@ -480,8 +481,14 @@ def FitAll():
         #Start fitting, order by order
         for i, order in enumerate(orders):
             fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
-                                "waveend": order.x[-1] + 5.0})
-            print "\n*****  Fitting order {}  ********\n".format(i+1)
+                                "waveend": order.x[-1] + 5.0,
+                                "temperature": temperature,
+                                "h2o": humidity,
+                                "o2": o2,
+                                "co2": co2,
+                                "n2o": n2o,
+                                "ch4": ch4})
+            print "\n*****  Fitting order {}  ********\n".format(i + 1)
             if i + 1 in [1, 22, 23, 24, 25, 44]:
                 fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
                 fitter.ImportData(order.copy())
@@ -510,6 +517,12 @@ def FitAll():
                                             return_resolution=False,
                                             adjust_wave="model",
                                             wavelength_fit_order=4)
+                humidity = fitter.GetValue("h2o")
+                temperature = fitter.GetValue("temperature")
+                ch4 = fitter.GetValue("ch4")
+                co2 = fitter.GetValue("co2")
+                co = fitter.GetValue("co")
+                n2o = fitter.GetValue("n2o")
 
             # Set up data structures for OutputFitsFile
             columns = {"wavelength": order.x,
@@ -541,6 +554,7 @@ def FitAll():
                                                          headers_info=[header, ])
         del fitter
         gc.collect()
+
 
 if __name__ == "__main__":
     FitAll()

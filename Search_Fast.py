@@ -1,20 +1,26 @@
 import sys
 import os
 
-import pandas
-
 import GenericSearch
-
+import pandas
 
 # Define regions contaminated by telluric residuals or other defects. We will not use those regions in the cross-correlation
 badregions = [[0, 1510],  # Blue end of H band (lots of water absorption)
-              # [1561, 1615],  # CO2 band that is often poorly corrected (for now at least...)
+              #[1561, 1615],  # CO2 band that is often poorly corrected (for now at least...)
               [1740, 2090],  #In between H and K bands (lots of water absorption)
               [2348, 2500],  #Red end of K band (lots of water absorption)
               [1510, 1520],  #Temporary...
-              [1688, 1740],
+              [1688,1740],
               [2313, 2350]]
 
+if "darwin" in sys.platform:
+    modeldir = "/Volumes/DATADRIVE/Stellar_Models/Sorted/Stellar/NearIR/"
+elif "linux" in sys.platform:
+    modeldir = "/media/FreeAgent_Drive/SyntheticSpectra/Sorted/Stellar/NearIR/"
+else:
+    modeldir = raw_input("sys.platform not recognized. Please enter model directory below: ")
+    if not modeldir.endswith("/"):
+        modeldir = modeldir + "/"
 
 def add_oh_lines(oh_file, badregions=[], minstrength=1.0, tol=0.05):
     oh_data = pandas.read_csv(oh_file, header=False, sep=" ", skipinitialspace=True, names=['wave', 'strength'])
@@ -27,7 +33,7 @@ def add_oh_lines(oh_file, badregions=[], minstrength=1.0, tol=0.05):
 
 
 if __name__ == "__main__":
-    # Parse command line arguments:
+    #Parse command line arguments:
     fileList = []
     interp_regions = []
     extensions = True
@@ -49,11 +55,13 @@ if __name__ == "__main__":
                                   extensions=extensions,
                                   resolution=45000.0,
                                   trimsize=trimsize,
+                                  vsini_values=[1.0, 10.0, 20.0, 30.0, 40.0],
+                                  observatory="McDonald",
                                   vbary_correct=True,
                                   debug=False,
                                   badregions=badregions,
                                   interp_regions=interp_regions,
-                                  modeldir='/Volumes/DATADRIVE/Stellar_Models/Sorted/Stellar/NearIR/',
+                                  modeldir=modeldir,
                                   addmode="weighted")
 
 

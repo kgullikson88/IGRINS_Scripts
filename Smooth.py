@@ -2,6 +2,7 @@ __author__ = 'Kevin Gullikson'
 import FittingUtilities
 import sys
 import os
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,7 +46,8 @@ if __name__ == "__main__":
                 vsini = abs(float(data[vsini_idx]))
                 break
         else:
-            sys.exit("Cannot find %s in the vsini data: %s" % (starname, vsini_file))
+            warnings.warn("Cannot find %s in the vsini data: %s" % (starname, vsini_file))
+            continue
         print starname, vsini
 
         # Begin looping over the orders
@@ -53,7 +55,7 @@ if __name__ == "__main__":
         header_list = []
         for i, order in enumerate(orders):
             print "Smoothing order %i/%i" % (i + 1, len(orders))
-            #Fix errors
+            # Fix errors
             order.err[order.err > 1e8] = np.sqrt(order.y[order.err > 1e8])
 
             #Linearize
