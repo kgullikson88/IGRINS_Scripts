@@ -13,6 +13,7 @@ from astropy.modeling import models, fitting
 import TelluricFitter
 import HelperFunctions
 import Units
+import parse_igrins_log
 
 
 def RefineWavelength(orders, header, bad_orders, ap2ord, plot=True):
@@ -179,9 +180,18 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
 
 
 def Convert(filename, maxnods, overwrite=False):
+    # Get the RA, DEC, and airmass from the IGRINS logfile
     lownum = int(filename.split(".spec")[0][-4:])
     highnum = lownum + maxnods - 1
+    nums = range(lownum, highnum + 1)
+    logfiles = parse_igrins_log.get_logfilenames(os.getcwd().split("/")[-1])
+    log_data = parse_igrins_log.read_logfile(logfiles)
+    ra = parse_igrins_log.dex_to_hex(parse_igrins_log.get_average(log_data, nums, 'RA'))
+    dec = parse_igrins_log.dex_to_hex(parse_igrins_log.get_average(log_data, nums, 'DEC'))
+    ZD = np.arccos(1.0 / parse_igrins_log.get_average(log_data, nums, 'AM')) * 180.0 / np.pi
+    print nums
 
+    # Get some more info from the fits header of each original IGRINS file
     date_obs = []
     zenith_angle = []
     humidity = []
@@ -196,8 +206,10 @@ def Convert(filename, maxnods, overwrite=False):
         header = fits.getheader(fname)
         if i == 0:
             objname = header['OBJECT']
-            ra = header['RATEL']
-            dec = header['DECTEL']
+            print ra, header['ratel']
+            print dec, header['dectel']
+            # ra = header['RATEL']
+            #dec = header['DECTEL']
         elif header['OBJECT'] != objname:
             # We have hit a new target.
             print "New object name ({}). Expected {}".format(header['object'], objname)
@@ -253,7 +265,9 @@ def Convert(filename, maxnods, overwrite=False):
         zenith_angle.append(np.arccos(1.0 / float(header['amstart'])) * 180.0 / np.pi)
 
     # Figure out the average values for each of the quantities
-    ZD = np.mean(zenith_angle)
+    print ZD, np.mean(zenith_angle)
+    # sys.exit()
+    #ZD = np.mean(zenith_angle)
     RH = np.mean(humidity)
     T = np.mean(temperature)
     P = np.mean(pressure)
@@ -380,10 +394,11 @@ if __name__ == "__main__":
             file_list.append(arg)
 
     # If file_list is empty, do all using the files in the current directory
-    file_list = sorted([f for f in os.listdir("./") if f.startswith("SDCH") and f.endswith("spec.fits")])
+    if len(file_list) == 0:
+        file_list = sorted([f for f in os.listdir("./") if f.startswith("SDCH") and f.endswith("spec.fits")])
     num_list = [int(f.split("_")[-1][:4]) for f in file_list]
     nod_list = [min(maxnods, num_list[i + 1] - num_list[i]) for i in range(len(num_list) - 1)]
-    # nod_list.append(maxnods)
+    nod_list.append(maxnods)
 
     for filename, nods in zip(file_list, nod_list):
         print filename, nods
