@@ -1,8 +1,11 @@
-from astropy.io import fits
 import sys
+
+from astropy.io import fits
+
 
 if __name__ == "__main__":
     header_kws = {}
+    file_list = []
     for arg in sys.argv[1:]:
         if "=" in arg:
             s = arg.partition("=")
@@ -14,11 +17,12 @@ if __name__ == "__main__":
                 pass
             header_kws[key] = value
         else:
-            filename = arg
+            file_list.append(arg)
 
-    hdulist = fits.open(filename, mode='update')
-    for key in header_kws.keys():
-        hdulist[0].header[key] = value
+    for filename in file_list:
+        hdulist = fits.open(filename, mode='update')
+        for key in header_kws.keys():
+            hdulist[0].header[key] = value
 
-    hdulist.flush()
-    hdulist.close()
+        hdulist.flush()
+        hdulist.close()
