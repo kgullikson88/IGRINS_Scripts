@@ -1,5 +1,3 @@
-import GetAtmosphere
-
 __author__ = 'kgulliks'
 
 """
@@ -14,18 +12,22 @@ steps:
   5: Remove the model from the data
 """
 
+import os
+import sys
+import FittingUtilities
+import logging
+
 import pandas
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
-import TelluricFitter
 from astropy.time import Time
-import os
+
+import TelluricFitter
+
 import HelperFunctions
-import sys
 import Units
 import GetAtmosphere
-import FittingUtilities
 
 
 def ReadModels(beforefile, afterfile, T='TEMPERATURE', RH='HUMIDITY', ch4='CH4', co2='CO2', co='CO', n2o='N2O'):
@@ -144,6 +146,7 @@ def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
 
     corrected_orders = []
     for i, order in enumerate(orders):
+        logging.info('Fitting order {}/{} in file {}'.format(i + 1, len(orders), filename))
         fitter.ImportData(order)
         fitter.AdjustValue({"wavestart": order.x[0] - 5,
                             "waveend": order.x[-1] + 5,
