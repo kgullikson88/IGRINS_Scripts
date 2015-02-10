@@ -22,7 +22,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.time import Time
-
 import TelluricFitter
 
 import HelperFunctions
@@ -99,6 +98,9 @@ def GetParameters(datafile):
     beforefile = template_files[before_idx]
     afterfile = template_files[after_idx]
     before_pars, after_pars = ReadModels(beforefile, afterfile)
+
+    if beforefile == afterfile:
+        return before_pars
 
     # Interpolate all the parameters to the time of observation
     m = (after_pars - before_pars) / (obstimes[after_idx] - obstimes[before_idx])
