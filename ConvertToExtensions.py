@@ -6,6 +6,7 @@ import warnings
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy import units as u
+from astropy import time
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from astropy.modeling import models, fitting
@@ -214,13 +215,18 @@ def Convert(filename, maxnods, overwrite=False):
             print "New object name ({}). Expected {}".format(header['object'], objname)
             print "Not using any subsequent files..."
             break
+
+        # Use these lines for new IGRINS data
         # t = header['DATE-OBS']
         #t = "{:s}T{:s}".format(t[:10], t[11:])
         #date = t.partition('T')[0]
+        # Use these lines for old (earlier than July 2014 IGRINS data
         date = header['DATE-OBS']
-        time = header['TIME-OBS']
-        t = '{:s}T{:s}'.format(date, time)
+        timestr = header['TIME-OBS']
+        t = '{:s}T{:s}'.format(date, timestr)
         print t
+
+        # Back to general things
         # print t
         t_jd = time.Time(t, format='isot', scale='utc').jd
         if i == len(original_fnames) - 1:
