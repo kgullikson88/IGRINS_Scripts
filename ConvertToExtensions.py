@@ -5,7 +5,8 @@ import warnings
 
 import matplotlib.pyplot as plt
 from astropy.io import fits
-from astropy import time, units as u
+from astropy import units as u
+from astropy import time
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from astropy.modeling import models, fitting
@@ -188,7 +189,10 @@ def Convert(filename, maxnods, overwrite=False):
     log_data = parse_igrins_log.read_logfile(logfiles)
     ra = parse_igrins_log.dex_to_hex(parse_igrins_log.get_average(log_data, nums, 'RA'))
     dec = parse_igrins_log.dex_to_hex(parse_igrins_log.get_average(log_data, nums, 'DEC'))
-    ZD = np.arccos(1.0 / parse_igrins_log.get_average(log_data, nums, 'AM')) * 180.0 / np.pi
+    try:
+        ZD = np.arccos(1.0 / parse_igrins_log.get_average(log_data, nums, 'AM')) * 180.0 / np.pi
+    except TypeError:
+        ZD = 30.0  # Guess!
     print nums
 
     # Get some more info from the fits header of each original IGRINS file
@@ -206,18 +210,23 @@ def Convert(filename, maxnods, overwrite=False):
         header = fits.getheader(fname)
         if i == 0:
             objname = header['OBJECT']
-            print ra, header['ratel']
-            print dec, header['dectel']
-            # ra = header['RATEL']
-            #dec = header['DECTEL']
         elif header['OBJECT'] != objname:
             # We have hit a new target.
             print "New object name ({}). Expected {}".format(header['object'], objname)
             print "Not using any subsequent files..."
             break
-        t = header['DATE-OBS']
-        t = "{:s}T{:s}".format(t[:10], t[11:])
-        date = t.partition('T')[0]
+
+        # Use these lines for new IGRINS data
+        # t = header['DATE-OBS']
+        #t = "{:s}T{:s}".format(t[:10], t[11:])
+        #date = t.partition('T')[0]
+        # Use these lines for old (earlier than July 2014 IGRINS data
+        date = header['DATE-OBS']
+        timestr = header['TIME-OBS']
+        t = '{:s}T{:s}'.format(date, timestr)
+        print t
+
+        # Back to general things
         # print t
         t_jd = time.Time(t, format='isot', scale='utc').jd
         if i == len(original_fnames) - 1:

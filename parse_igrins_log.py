@@ -4,6 +4,7 @@ import pandas
 import numpy as np
 
 from HelperFunctions import IsListlike
+import StarData
 
 
 def hex_to_dex(str):
@@ -24,6 +25,17 @@ def dex_to_hex(value):
     return "{:s}{:02d}:{:02d}:{:02f}".format(s, degree, minute, second)
 
 
+def get_radec_simbad(objname):
+    try:
+        data = StarData.GetData(objname)
+        ra = hex_to_dex(data.ra)
+        dec = hex_to_dex(data.dec)
+    except TypeError:
+        ra, dec = np.nan, np.nan
+
+    return ra, dec
+
+
 def read_logfile(filename):
     if IsListlike(filename):
         # Assume it is a list
@@ -35,8 +47,13 @@ def read_logfile(filename):
     data = pandas.read_csv(filename, skiprows=1)
 
     # Convert RA and DEC to decimals
-    data['RA'] = data['RA'].map(hex_to_dex)
-    data['DEC'] = data['DEC'].map(hex_to_dex)
+    try:
+        data['RA'] = data['RA'].map(hex_to_dex)
+        data['DEC'] = data['DEC'].map(hex_to_dex)
+    except TypeError:
+        output = data['OBJNAME'].map(get_radec_simbad)
+        data['RA'] = output.map(lambda l: l[0])
+        data['DEC'] = output.map(lambda l: l[1])
 
     #Convert the filename column to file number
     data['File_Number'] = data['FILENAME'].map(lambda s: int(s[-9:-5]))
