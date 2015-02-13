@@ -1,7 +1,6 @@
 import sys
 
 import matplotlib.pyplot as plt
-
 import numpy
 
 import HelperFunctions
@@ -50,17 +49,26 @@ if __name__ == "__main__":
                 order.x = numpy.arange(order.size())
 
             if normalize:
-                plt.plot(order.x, order.y / order.cont, ls, rasterized=True)
+                if i == 0:
+                    plt.plot(order.x, order.y / order.cont, ls, rasterized=True, label=fname)
+                else:
+                    plt.plot(order.x, order.y / order.cont, ls, rasterized=True)
                 plt.text(order.x.mean(), 1.1, str(i + 1))
             else:
                 if errors:
                     plt.errorbar(order.x, order.y, yerr=order.err)
                 else:
-                    plt.plot(order.x, order.y, ls)
+                    if i == 0:
+                        plt.plot(order.x, order.y, ls, label=fname)
+                    else:
+                        plt.plot(order.x, order.y, ls)
+
                     #plt.plot(order.x, order.cont)
             if byorder:
                 plt.title("Order %i" % i)
                 plt.show()
+    if oneplot:
+        plt.legend(loc='best')
     if not byorder:
         plt.xlabel("Wavelength (nm)", fontsize=15)
         if normalize:
