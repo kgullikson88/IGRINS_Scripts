@@ -193,6 +193,7 @@ def Convert(filename, maxnods, overwrite=False):
         ZD = np.arccos(1.0 / parse_igrins_log.get_average(log_data, nums, 'AM')) * 180.0 / np.pi
     except TypeError:
         ZD = 30.0  # Guess!
+    total_exptime = 0.0
     print nums
 
     # Get some more info from the fits header of each original IGRINS file
@@ -208,6 +209,7 @@ def Convert(filename, maxnods, overwrite=False):
         print "Reading header info from {:s}".format(fname)
         # Get the observation time
         header = fits.getheader(fname)
+        total_exptime += header['EXPTIME']
         if i == 0:
             objname = header['OBJECT']
         elif header['OBJECT'] != objname:
@@ -296,6 +298,7 @@ def Convert(filename, maxnods, overwrite=False):
     print "Outputting to {:s}".format(outfilename)
     pri_hdu = fits.PrimaryHDU()
     pri_hdu.header['OBJECT'] = objname
+    pri_hdu.header['EXPTIME'] = total_exptime
     pri_hdu.header['RA'] = ra
     pri_hdu.header['DEC'] = dec
     pri_hdu.header['JD'] = t_jd
