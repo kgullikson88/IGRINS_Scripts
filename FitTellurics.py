@@ -140,7 +140,7 @@ def EstimateModel():
                                            resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
-                                           adjust_wave="model",
+                                           adjust_wave="data",
                                            wavelength_fit_order=4)
             resolution.append(R)
             waveshifts.append(fitter.shift)
@@ -224,7 +224,7 @@ def EstimateModel():
                                            resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
-                                           adjust_wave="model",
+                                           adjust_wave="data",
                                            wavelength_fit_order=4)
             resolution.append(R)
             waveshifts.append(fitter.shift)
@@ -259,7 +259,7 @@ def EstimateModel():
                                            resolution_fit_mode="SVD",
                                            fit_source=True,
                                            return_resolution=True,
-                                           adjust_wave="model",
+                                           adjust_wave="data",
                                            wavelength_fit_order=4)
             resolution.append(R)
             waveshifts.append(fitter.shift)
@@ -515,7 +515,7 @@ def FitAll():
                                             resolution_fit_mode="SVD",
                                             fit_source=True,
                                             return_resolution=False,
-                                            adjust_wave="model",
+                                            adjust_wave="data",
                                             wavelength_fit_order=4)
                 humidity = fitter.GetValue("h2o")
                 temperature = fitter.GetValue("temperature")
