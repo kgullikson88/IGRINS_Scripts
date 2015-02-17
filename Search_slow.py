@@ -48,12 +48,13 @@ if __name__ == '__main__':
     prim_vsini = [100.0] * len(fileList)
 
     # Add strong oh lines to interp_regions
-    oh_file = "{}/School/Research/IGRINS_data/plp/master_calib/ohlines.dat".format(os.environ['HOME'])
+    homedir = os.environ['HOME']
+    oh_file = "{}/School/Research/IGRINS_data/plp/master_calib/ohlines.dat".format(homedir)
     interp_regions = add_oh_lines(oh_file, badregions=interp_regions)
 
     # Get the primary star vsini values
     prim_vsini = []
-    vsini = pandas.read_csv("../../Useful_Datafiles/Vsini.csv", sep='|', skiprows=8)[1:]
+    vsini = pandas.read_csv("{}/School/Research/Useful_Datafiles/Vsini.csv".format(homedir), sep='|', skiprows=8)[1:]
     vsini_dict = {}
     for fname in fileList:
         root = fname.split('/')[-1][:9]
@@ -61,7 +62,7 @@ if __name__ == '__main__':
             prim_vsini.append(vsini_dict[root])
         else:
             header = fits.getheader(fname)
-            star = header['OBJECT1']
+            star = header['OBJECT']
             print fname, star
             v = vsini.loc[vsini.Identifier.str.strip() == star]['vsini(km/s)'].values[0]
             prim_vsini.append(float(v) * 0.8)
@@ -77,12 +78,12 @@ if __name__ == '__main__':
                                         modeldir=modeldir,
                                         badregions=badregions,
                                         interp_regions=interp_regions,
-                                        metal_values=(0.0,),
-                                        vsini_values=(1, 5.0, 10.0, 15.0),
+                                        metal_values=(-0.5, 0.5),
+                                        vsini_values=(1, 5.0, 10.0, 20.0, 30.0),
                                         Tvalues=range(3000, 6900, 100),
                                         observatory='McDonald',
                                         debug=False,
-                                        vbary_correct=False,
-                                        addmode='ml',
+                                        vbary_correct=True,
+                                        addmode='simple',
                                         output_mode='hdf5')
 
