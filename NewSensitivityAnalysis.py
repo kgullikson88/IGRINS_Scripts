@@ -27,7 +27,7 @@ if __name__ == '__main__':
                         badregions=badregions, interp_regions=interp_regions,
                         metal_values=(0.0,),
                         vsini_values=(5,),
-                        Tvalues=range(6000, 6100, 100),
+                        Tvalues=range(3000, 6100, 100),
                         debug=False,
                         addmode='simple',
                         output_mode='hdf5')

@@ -39,13 +39,13 @@ def add_oh_lines(oh_file, badregions=[], minstrength=1.0, tol=0.05):
 trimsize = 10
 homedir = os.environ['HOME']
 oh_file = "{}/School/Research/IGRINS_data/plp/master_calib/ohlines.dat".format(homedir)
+interp_regions = []
 interp_regions = add_oh_lines(oh_file, badregions=interp_regions)
 
 
 if __name__ == '__main__':
     # Parse command line arguments:
     fileList = []
-    interp_regions = []
     for arg in sys.argv[1:]:
         if 1:
             fileList.append(arg)
