@@ -3,6 +3,8 @@ Sensitivity analysis, using the new search method.
 """
 import sys
 
+import matplotlib.pyplot as plt
+
 import Sensitivity
 import StarData
 import SpectralTypeRelations
@@ -37,7 +39,12 @@ def check_sensitivity():
 
 
 if __name__ == '__main__':
-    if 'analyze' in sys.argv[1]:
-        Sensitivity.analyze_sensitivity(hdf5_file='Sensitivity.hdf5')
+    if '--analyze' in sys.argv[1]:
+        sig_fig, rate_fig, rate_ax, rate_top_ax, sig_ax, sig_top_ax = Sensitivity.analyze_sensitivity(
+            hdf5_file='Sensitivity_known.hdf5')
+
+        sig_fig.savefig('CHIRON_Significance.pdf')
+        rate_fig.savefig('CHIRON_Rate.pdf')
+        plt.show()
     else:
         check_sensitivity()
