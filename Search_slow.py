@@ -53,7 +53,15 @@ if __name__ == '__main__':
     # Get the primary star vsini values
     prim_vsini = StarData.get_vsini(fileList)
 
-    GenericSearch.slow_companion_search(fileList, prim_vsini,
+    # Remove anything without a vsini
+    new_file_list = []
+    new_prim_vsini = []
+    for vsini, fname in zip(prim_vsini, fileList):
+        if vsini is not None:
+            new_file_list.append(fname)
+            new_prim_vsini.append(vsini)
+
+    GenericSearch.slow_companion_search(new_file_list, new_prim_vsini,
                                         hdf5_file='/media/ExtraSpace/PhoenixGrid/IGRINS_Grid.hdf5',
                                         extensions=True,
                                         resolution=None,
