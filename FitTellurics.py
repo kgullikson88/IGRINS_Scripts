@@ -523,6 +523,7 @@ def FitAll():
                 co2 = fitter.GetValue("co2")
                 co = fitter.GetValue("co")
                 n2o = fitter.GetValue("n2o")
+                order = fitter.data
 
             # Set up data structures for OutputFitsFile
             columns = {"wavelength": order.x,
