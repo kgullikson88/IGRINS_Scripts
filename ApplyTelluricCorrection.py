@@ -98,7 +98,7 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
         model.y[badindices] = data.y[badindices] / data.cont[badindices]
         model.y[model.y < 1e-5] = 1e-5
 
-        # plt.plot(data.x, data.y / model.y)
+        data.x = model.x
         data.y /= model.y
         data.err /= model.y
         if get_primary:
@@ -185,7 +185,7 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
 
 def main1():
     primary = False
-    plot = False
+    plot = True
     if len(sys.argv) > 2:
         original = sys.argv[1]
         corrected = sys.argv[2]
