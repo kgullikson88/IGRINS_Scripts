@@ -69,7 +69,7 @@ if __name__ == '__main__':
                                         modeldir=modeldir,
                                         badregions=badregions,
                                         interp_regions=interp_regions,
-                                        metal_values=(-0.5, 0.5),
+                                        metal_values=(-0.5, 0, 0.5),
                                         vsini_values=(1, 5.0, 10.0, 20.0, 30.0),
                                         Tvalues=range(3000, 6900, 100),
                                         observatory='McDonald',
