@@ -1,6 +1,5 @@
 import sys
 import os
-import FittingUtilities
 import warnings
 
 import matplotlib.pyplot as plt
@@ -10,8 +9,9 @@ from astropy import time
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from astropy.modeling import models, fitting
-
 import TelluricFitter
+
+import FittingUtilities
 import HelperFunctions
 import Units
 import parse_igrins_log
@@ -209,7 +209,7 @@ def Convert(filename, maxnods, overwrite=False):
         print "Reading header info from {:s}".format(fname)
         # Get the observation time
         header = fits.getheader(fname)
-        total_exptime += header['EXPTIME']
+        total_exptime += float(header['EXPTIME'])
         if i == 0:
             objname = header['OBJECT']
         elif header['OBJECT'] != objname:
@@ -219,13 +219,13 @@ def Convert(filename, maxnods, overwrite=False):
             break
 
         # Use these lines for new IGRINS data
-        # t = header['DATE-OBS']
-        #t = "{:s}T{:s}".format(t[:10], t[11:])
-        #date = t.partition('T')[0]
+        t = header['DATE-OBS']
+        t = "{:s}T{:s}".format(t[:10], t[11:])
+        date = t.partition('T')[0]
         # Use these lines for old (earlier than July 2014 IGRINS data
-        date = header['DATE-OBS']
-        timestr = header['TIME-OBS']
-        t = '{:s}T{:s}'.format(date, timestr)
+        # date = header['DATE-OBS']
+        #timestr = header['TIME-OBS']
+        #t = '{:s}T{:s}'.format(date, timestr)
         print t
 
         # Back to general things
