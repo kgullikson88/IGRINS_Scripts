@@ -451,6 +451,7 @@ def FitAll():
             fitter.EditAtmosphereProfile("Pressure", height, Pres)
             fitter.EditAtmosphereProfile("H2O", height, h2o)
 
+
         # Adjust fitter values
         fitter.AdjustValue({"angle": angle,
                             "pressure": pressure,
