@@ -5,8 +5,8 @@ import FittingUtilities
 from astropy.io import fits as pyfits
 import matplotlib.pyplot as plt
 import numpy as np
-import DataStructures
 
+import DataStructures
 import HelperFunctions
 
 
@@ -185,7 +185,7 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
 
 def main1():
     primary = False
-    plot = True
+    plot = False
     if len(sys.argv) > 2:
         original = sys.argv[1]
         corrected = sys.argv[2]
