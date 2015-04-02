@@ -9,6 +9,7 @@ import Sensitivity
 import StarData
 import SpectralTypeRelations
 import Search_slow
+from HelperFunctions import ensure_dir
 
 MS = SpectralTypeRelations.MainSequence()
 
@@ -40,11 +41,15 @@ def check_sensitivity():
 
 if __name__ == '__main__':
     if '--analyze' in sys.argv[1]:
-        sig_fig, rate_fig, rate_ax, rate_top_ax, sig_ax, sig_top_ax = Sensitivity.analyze_sensitivity(
-            hdf5_file='Sensitivity_known.hdf5')
+        # Make the 2d plots
+        df = Sensitivity.analyze_sensitivity(hdf5_file='Sensitivity_known.hdf5')
 
-        sig_fig.savefig('CHIRON_Significance.pdf')
-        rate_fig.savefig('CHIRON_Rate.pdf')
+    elif '--marginalize' in sys.argv[1]:
+        fig, ax = Sensitivity.marginalize_sensitivity(infilename='Sensitivity_Dataframe.csv')
         plt.show()
+        ensure_dir('Figures/')
+        plt.savefig('Figures/Sensitivity_Marginalized.pdf')
+
+
     else:
         check_sensitivity()
