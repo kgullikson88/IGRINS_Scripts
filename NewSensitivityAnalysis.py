@@ -28,7 +28,7 @@ def check_sensitivity():
     interp_regions = Search_slow.interp_regions
     trimsize = Search_slow.trimsize
     prim_vsini = StarData.get_vsini(fileList)
-    
+
     # Remove anything without a vsini
     new_file_list = []
     new_prim_vsini = []
@@ -45,7 +45,7 @@ def check_sensitivity():
                         badregions=badregions, interp_regions=interp_regions,
                         metal_values=(0.0,),
                         vsini_values=(0, 10, 20, 30, 40, 50),
-                        Tvalues=range(5100, 6000, 100),
+                        Tvalues=range(6000, 7100, 100),
                         debug=False,
                         addmode='simple',
                         output_mode='hdf5')
@@ -54,7 +54,7 @@ def check_sensitivity():
 if __name__ == '__main__':
     if '--analyze' in sys.argv[1]:
         # Make the 2d plots
-        df = Sensitivity.analyze_sensitivity(hdf5_file='Sensitivity.hdf5', interactive=False)
+        df = Sensitivity.analyze_sensitivity(hdf5_file='Sensitivity.hdf5', interactive=True, update=True)
 
     elif '--marginalize' in sys.argv[1]:
         fig, ax = Sensitivity.marginalize_sensitivity(infilename='Sensitivity_Dataframe.csv')
