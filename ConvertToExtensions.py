@@ -17,7 +17,7 @@ import Units
 import parse_igrins_log
 
 
-def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
+def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0, adjust_wave=True):
     orders, wavefields = HelperFunctions.ReadFits(filename, return_aps=True)
     try:
         errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
@@ -28,6 +28,14 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
             error = order.copy()
             error.y = np.sqrt(order.y)
             errors.append(error.copy())
+
+    if adjust_wave:
+        # Use the .wave.fits file to adjust the wavelength grid for each order
+        wavefile = filename.replace('.spec.fits', '.wave.fits')
+        wave_data = fits.getdata(wavefile)
+        for i, order in enumerate(orders):
+            orders[i].x = wave_data[i].copy()
+
     blazes = np.loadtxt(blazefile)
     header_info = []
     ret_orders = []
