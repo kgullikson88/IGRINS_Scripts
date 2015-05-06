@@ -1,12 +1,12 @@
 import sys
 import os
-import FittingUtilities
 import gc
 
 import numpy as np
 from astropy.io import fits
 from astropy import units, constants
 
+import FittingUtilities
 import TelluricFitter
 import DataStructures
 import Units
@@ -108,7 +108,7 @@ def EstimateModel():
                           "co": [0.01, 0.9],
                           "resolution": [30000, 50000]})
 
-        #Ignore some regions (currently nothing)
+        # Ignore some regions (currently nothing)
         fitter.IgnoreRegions(badregions)
 
         fitter.continuum_fit_order = 3
@@ -473,7 +473,7 @@ def FitAll():
                           "resolution": [30000, 50000]})
 
 
-        #Ignore some regions (currently nothing)
+        # Ignore some regions (currently nothing)
         fitter.IgnoreRegions(badregions)
 
         fitter.continuum_fit_order = 3
@@ -516,7 +516,7 @@ def FitAll():
                                             resolution_fit_mode="SVD",
                                             fit_source=True,
                                             return_resolution=False,
-                                            adjust_wave="data",
+                                            adjust_wave="model",
                                             wavelength_fit_order=4)
                 humidity = fitter.GetValue("h2o")
                 temperature = fitter.GetValue("temperature")
