@@ -17,126 +17,7 @@ import Units
 import parse_igrins_log
 
 
-def RefineWavelength(orders, header, bad_orders, ap2ord, plot=True):
-    humidity = header['HUMIDITY']
-    T = (header['AIRTEMP'] - 32.0) * 5.0 / 9.0 + 273.15
-    P = header['BARPRESS'] * Units.hPa / Units.inch_Hg
-    ZD = header['ZD']
-    co2 = 368.5
-    n2o = 0.32
-    co = 0.14
-    ch4 = 1.8
-    orders = sorted(orders, key=lambda o: o.x[0])
-    fitter = TelluricFitter.TelluricFitter()
-    print "Generating Telluric Model"
-    model = fitter.Modeler.MakeModel(temperature=T,
-                                     pressure=P,
-                                     angle=ZD,
-                                     humidity=humidity,
-                                     co2=co2,
-                                     n2o=n2o,
-                                     co=co,
-                                     ch4=ch4,
-                                     lowfreq=1e7 / (orders[-1].x[-1] + 20.0),
-                                     highfreq=1e7 / (orders[0].x[0] - 20.0))
-    print "Rebinning model to constant wavelength spacing"
-    xgrid = np.linspace(model.x[0], model.x[-1], model.size())
-    model = FittingUtilities.RebinData(model, xgrid)
-    print "Reducing resolution of model to R=60000"
-    model = FittingUtilities.ReduceResolution2(model, 60000.0)
-    print "Interpolating model"
-    model_spline = spline(model.x, model.y)
-
-    apertures = np.array([], dtype=np.float)
-    ordernums = np.array([], dtype=np.float)
-    pixels = np.array([], dtype=np.float)
-    wavelengths = np.array([], dtype=np.float)
-    weights = np.array([], dtype=np.float)
-    orders_copy = [o.copy() for o in orders]
-    for i, order in enumerate(orders_copy):
-        if i in bad_orders:
-            continue
-
-        print "Fitting Wavelength in order {:d}".format(i + 1)
-        model2 = model_spline(order.x)
-        order.cont *= FittingUtilities.Iterative_SV(order.y / (order.cont * model2), 61, 3, lowreject=2, highreject=2)
-        if plot:
-            plt.plot(order.x, order.y / order.cont, 'k-', alpha=0.4)
-            plt.plot(order.x, model2, 'r-', alpha=0.6)
-        left = np.searchsorted(model.x, order.x[0] - 10.0)
-        right = np.searchsorted(model.x, order.x[-1] + 10.0)
-        # modelfcn, mean = fitter.FitWavelength(order.copy(), model[left:right], fitorder=7, tol=0.1, linestrength=0.9)
-        modelfcn, mean = fitter.FitWavelengthNew(order.copy(), model[left:right], fitorder=4, be_safe=True)
-        # xgrid = (order.x - np.median(order.x))/(order.x[-1] - order.x[0])
-        order.x += modelfcn(order.x - mean)
-        chisq = np.sum((order.y / order.cont - model_spline(order.x)) ** 2)
-        if plot:
-            plt.plot(order.x, order.y / order.cont, 'g-', alpha=0.4)
-
-        order2 = order.copy()
-        order2.y /= order2.cont
-        linepixels = FittingUtilities.FindLines(order2, tol=0.9)
-        linepixels = np.array([p for p in linepixels if order.y[p] / order.cont[p] > 0.05], dtype=np.int)
-        waves = order.x[linepixels]
-        apertures = np.hstack((apertures, np.ones(waves.size) * i))
-        ordernums = np.hstack((ordernums, np.ones(waves.size) * ap2ord[i]))
-        pixels = np.hstack((pixels, linepixels))
-        wavelengths = np.hstack((wavelengths, waves))
-        weights = np.hstack((weights, np.ones(waves.size) / chisq))
-
-    bestoffset = 0
-    bestsign = 1
-    bestchisq = np.inf
-    p_init = models.Chebyshev2D(5, 4, x_domain=[0, 2048])
-    fit_p = fitting.LinearLSQFitter()
-    print "Fitting wavelength solution for entire chip with chebyshev polynomial"
-    """
-    for offset in range(200):
-        for sign in [-1.0, 1.0]:
-            ordernums = sign * apertures + offset
-
-            p = fit_p(p_init, pixels, ordernums, wavelengths * ordernums, weights)
-            pred = p(pixels, ordernums) / ordernums
-
-            chisq = np.sum((wavelengths - pred) ** 2)
-            if chisq < bestchisq:
-                bestchisq = chisq
-                bestoffset = offset
-                bestsign = sign
-
-    print "best sign: ", bestsign
-    print "best offset: ", bestoffset
-    """
-
-    p = fit_p(p_init, pixels, ordernums, wavelengths * ordernums, weights)
-    if plot:
-        # ordernums = bestsign * apertures + bestoffset
-        pred = p(pixels, ordernums) / ordernums
-        fig3d = plt.figure(2)
-        ax3d = fig3d.add_subplot(111, projection='3d')
-        ax3d.scatter3D(pixels, apertures, wavelengths - pred, 'ro')
-        fig3 = plt.figure(3)
-        ax = fig3.add_subplot(111)
-
-    # Assign the wavelength solution to each order
-    for i, order in enumerate(orders):
-        ord = ap2ord[i]
-        xgrid = np.arange(order.size(), dtype=np.float)
-        ord_arr = ord * np.ones(xgrid.size, dtype=np.float)
-        wave = p(xgrid, ord_arr) / ord_arr
-        if plot:
-            ax.plot(order.x, order.y / order.cont, 'k-', alpha=0.4)
-            ax.plot(wave, order.y / order.cont, 'g-', alpha=0.4)
-            ax.plot(wave, model_spline(wave), 'r-', alpha=0.6)
-        orders[i].x = wave
-
-    if plot:
-        plt.show()
-
-    return orders
-
-
-def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
+def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0, adjust_wave=True):
     orders, wavefields = HelperFunctions.ReadFits(filename, return_aps=True)
     try:
         errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
@@ -147,6 +28,14 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0):
             error = order.copy()
             error.y = np.sqrt(order.y)
             errors.append(error.copy())
+
+    if adjust_wave:
+        # Use the .wave.fits file to adjust the wavelength grid for each order
+        wavefile = filename.replace('.spec.fits', '.wave.fits')
+        wave_data = fits.getdata(wavefile)
+        for i, order in enumerate(orders):
+            orders[i].x = wave_data[i].copy()
+
     blazes = np.loadtxt(blazefile)
     header_info = []
     ret_orders = []
@@ -326,10 +215,6 @@ def Convert(filename, maxnods, overwrite=False):
         skip = 0
         bad_orders = [0, 1, 3, 19, 20]
     orders, ap2ord = ReadFile(filename, blazefile, skip)
-    print ap2ord
-
-    # Wavelength calibration
-    #orders = RefineWavelength(orders, pri_hdu.header, bad_orders, ap2ord, plot=plot)
 
     # Convert to columns
     columns = []
@@ -352,12 +237,6 @@ def Convert(filename, maxnods, overwrite=False):
         skip = 2
         bad_orders = [0, 21, 22]
     orders, ap2ord = ReadFile(filename, blazefile, skip)
-
-    # Wavelength calibration
-    #orders = RefineWavelength(orders, pri_hdu.header, bad_orders, ap2ord, plot=plot)
-
-    #Wavelength calibration
-    # orders = RefineWavelength(orders, pri_hdu.header, bad_orders, plot=plot)
 
     # Convert to columns
     for order in orders:
