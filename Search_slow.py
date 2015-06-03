@@ -10,19 +10,22 @@ import StarData
 
 
 
+
 # Define regions contaminated by telluric residuals or other defects. We will not use those regions in the cross-correlation
 badregions = [[0, 1510],  # Blue end of H band (lots of water absorption)
               # [1561, 1615],  # CO2 band that is often poorly corrected (for now at least...)
               [1740, 2090],  # In between H and K bands (lots of water absorption)
               [2380, 2500],  # Red end of K band (lots of water absorption)
               # [1688, 1740],
-              #[2313, 2350],
+              # [2313, 2350],
 ]
 
 if "darwin" in sys.platform:
     modeldir = "/Volumes/DATADRIVE/Stellar_Models/PHOENIX/Stellar/Vband/"
+    hdf5_filename = '/Volumes/DATADRIVE/PhoenixGrid/IGRINS_Grid.hdf5'
 elif "linux" in sys.platform:
     modeldir = "/media/FreeAgent_Drive/SyntheticSpectra/Sorted/Stellar/Vband/"
+    hdf5_filename = '/Volumes/DATADRIVE/PhoenixGrid/IGRINS_Grid.hdf5'
 else:
     modeldir = raw_input("sys.platform not recognized. Please enter model directory below: ")
     if not modeldir.endswith("/"):
@@ -64,7 +67,7 @@ if __name__ == '__main__':
             new_prim_vsini.append(vsini)
 
     GenericSearch.slow_companion_search(new_file_list, new_prim_vsini,
-                                        hdf5_file='/media/ExtraSpace/PhoenixGrid/IGRINS_Grid.hdf5',
+                                        hdf5_file=hdf5_filename,
                                         extensions=True,
                                         resolution=None,
                                         trimsize=trimsize,
