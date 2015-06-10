@@ -113,7 +113,7 @@ def EstimateModel():
 
         fitter.continuum_fit_order = 3
 
-        #############################################################
+        # ############################################################
         #     Now, we start fitting molecules!
         #############################################################
 
@@ -304,7 +304,7 @@ def EstimateModel():
             #fitter.shift = vel/(constants.c.cgs.value*units.cm.to(units.km)) * wave0
             print "fitter.shift = ", fitter.shift
             primary, model = fitter.GenerateModel(fitpars,
-                                                  separate_primary=True,
+                                                  separate_source=True,
                                                   return_resolution=False)
 
             data = fitter.data
@@ -312,7 +312,7 @@ def EstimateModel():
                 #The wavelength calibration might be off
                 wave0 = order.x.mean()
                 fitter.shift = vel / (constants.c.cgs.to(units.km / units.s).value) * wave0
-                model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
+                model = fitter.GenerateModel(fitpars, separate_source=False, nofit=True)
                 model.x /= (1.0 + vel / (constants.c.cgs.value * units.cm.to(units.km)))
                 model = FittingUtilities.RebinData(model, order.x)
                 data = order.copy()
@@ -479,7 +479,7 @@ def FitAll():
         fitter.continuum_fit_order = 3
         fitter.resolution_fit_mode = 'SVD'
 
-        #Start fitting, order by order
+        # Start fitting, order by order
         for i, order in enumerate(orders):
             fitter.AdjustValue({"wavestart": order.x[0] - 5.0,
                                 "waveend": order.x[-1] + 5.0,
@@ -493,7 +493,7 @@ def FitAll():
             if i + 1 in [1, 22, 23, 24, 25, 44]:
                 fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
                 fitter.ImportData(order.copy())
-                model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
+                model = fitter.GenerateModel(fitpars, separate_source=False, nofit=True)
                 model = FittingUtilities.RebinData(model, order.x)
                 primary = model.copy()
                 primary.y = np.ones(primary.size())

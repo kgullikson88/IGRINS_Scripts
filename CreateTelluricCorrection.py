@@ -14,7 +14,6 @@ steps:
 
 import os
 import sys
-import FittingUtilities
 import logging
 
 import pandas
@@ -22,8 +21,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.time import Time
-import TelluricFitter
 
+import FittingUtilities
+import TelluricFitter
 import HelperFunctions
 import Units
 import GetAtmosphere
@@ -162,7 +162,7 @@ def CorrectData(filename, pars, plot=False, edit_atmosphere=True):
                             "n2o": pars.iloc[i]['N2O']})
         if i + 1 in [1, 22, 23, 24, 25, 44]:
             fitpars = [fitter.const_pars[j] for j in range(len(fitter.parnames)) if fitter.fitting[j]]
-            model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
+            model = fitter.GenerateModel(fitpars, separate_source=False, nofit=True)
             model = FittingUtilities.RebinData(model, order.x)
             primary = model.copy()
             primary.y = np.ones(primary.size())
