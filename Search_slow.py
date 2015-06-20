@@ -26,7 +26,7 @@ if "darwin" in sys.platform:
     hdf5_filename = '/Volumes/DATADRIVE/PhoenixGrid/IGRINS_Grid.hdf5'
 elif "linux" in sys.platform:
     modeldir = "/media/FreeAgent_Drive/SyntheticSpectra/Sorted/Stellar/Vband/"
-    hdf5_filename = '/Volumes/DATADRIVE/PhoenixGrid/IGRINS_Grid.hdf5'
+    hdf5_filename = '/media/ExtraSpace/PhoenixGrid/IGRINS_Grid.hdf5'
 else:
     modeldir = raw_input("sys.platform not recognized. Please enter model directory below: ")
     if not modeldir.endswith("/"):
