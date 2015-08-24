@@ -1,16 +1,16 @@
+from __future__ import division
+
 import sys
-from scipy.interpolate import InterpolatedUnivariateSpline as interp
 from collections import defaultdict
 import os
+import FittingUtilities
 
-import DataStructures
+from scipy.interpolate import InterpolatedUnivariateSpline as interp
 import numpy as np
 import pylab
 from astropy.io import fits as pyfits
-import FittingUtilities
 
-import FitsUtils
-import FindContinuum
+import DataStructures
 import HelperFunctions
 
 
@@ -22,8 +22,7 @@ def MedianAdd(fileList, outfilename="Total.fits"):
     numorders = []
     medians = []
     for fname in fileList:
-        observation = FitsUtils.MakeXYpoints(fname, extensions=True, x="wavelength", y="flux", cont="continuum",
-                                             errors="error")
+        observation = HelperFunctions.ReadExtensionFits(fname)
         all_data.append(observation)
         numorders.append(len(observation))
         medians.append([np.median(order.y) for order in observation])
@@ -51,12 +50,12 @@ def MedianAdd(fileList, outfilename="Total.fits"):
             total[j] = flux(x)
             norm += medians[j][i]
 
-            #pylab.figure(2)
+            # pylab.figure(2)
             #for j in range(total.shape[0]):
             #pylab.(x, total[j])
         flux = np.median(total, axis=0) * norm
         cont = FittingUtilities.Continuum(x, flux, fitorder=3, lowreject=1.5, highreject=5)
-        #Set up data structures for OutputFitsFile
+        # Set up data structures for OutputFitsFile
         columns = {"wavelength": x,
                    "flux": flux,
                    "continuum": cont,
@@ -68,8 +67,8 @@ def MedianAdd(fileList, outfilename="Total.fits"):
         #pylab.plot(total.x, total.cont)
 
     print "Outputting to %s" % outfilename
-    #pylab.show()
-    FitsUtils.OutputFitsFileExtensions(column_list, fileList[0], outfilename, mode="new")
+    # pylab.show()
+    HelperFunctions.OutputFitsFileExtensions(column_list, fileList[0], outfilename, mode="new")
 
     #Add the files used to the primary header of the new file
     hdulist = pyfits.open(outfilename, mode='update')
@@ -85,12 +84,21 @@ def Add(fileList, outfilename=None):
     all_data = []
     numorders = []
     exptime = 0.0
+    humidity = 0.0
+    temperature = 0.0
+    pressure = 0.
+    zenith_angle = 0.0
     for fname in fileList:
         observation = HelperFunctions.ReadFits(fname, extensions=True, x="wavelength", y="flux", cont="continuum",
                                                errors="error")
         all_data.append(observation)
         numorders.append(len(observation))
-        exptime += pyfits.getheader(fname)['EXPTIME']
+        header = pyfits.getheader(fname)
+        exptime += header['EXPTIME']
+        humidity += header['HUMIDITY'] / len(fileList)
+        temperature += header['AIRTEMP'] / len(fileList)
+        pressure += header['BARPRESS'] / len(fileList)
+        zenith_angle += header['ZD'] / len(fileList)
 
     if any(n != numorders[0] for n in numorders):
         print "Error! Some of the files had different numbers of orders!"
@@ -104,7 +112,7 @@ def Add(fileList, outfilename=None):
         outfilename = "Total.fits"
     column_list = []
     for i in range(numorders):
-        #Determine the x-axis
+        # Determine the x-axis
         dx = 0
         left = 0
         right = 9e9
@@ -158,12 +166,16 @@ def Add(fileList, outfilename=None):
         pylab.show()
     HelperFunctions.OutputFitsFileExtensions(column_list, fileList[0], outfilename, mode="new")
 
-    #Add the files used to the primary header of the new file
+    # Add the files used to the primary header of the new file
     hdulist = pyfits.open(outfilename, mode='update')
     header = hdulist[0].header
     for i in range(len(fileList)):
         header.set("FILE%i" % (i + 1), fileList[i], "File %i used in Co-Adding" % (i + 1))
     header.set('EXPTIME', exptime, 'Total exposure time (seconds)')
+    header.set('HUMIDITY', humidity, 'Average percent humidity')
+    header.set('AIRTEMP', temperature, 'Average air temperature (F)')
+    header.set('BARPRESS', pressure, 'Average pressure (mm Hg)')
+    header.set('ZD', zenith_angle, 'Average zenith angle')
     hdulist[0].header = header
     hdulist.flush()
     hdulist.close()
@@ -175,19 +187,19 @@ if __name__ == "__main__":
         fileList.append(arg)
 
     if len(fileList) > 1:
-        #Add(fileList)
+        # Add(fileList)
         fileDict = defaultdict(list)
         for fname in fileList:
             header = pyfits.getheader(fname)
             starname = header['OBJECT'].replace(" ", "_")
-            #fileDict[starname].append(fname)
-            #print(fname, starname)
-            starname1 = header['OBJECT1'].replace(" ", "_")
-            starname2 = header['OBJECT2'].replace(" ", "_")
-            key = "{}+{}".format(starname1, starname2)
-            fileDict[key].append(fname)
+            fileDict[starname].append(fname)
+            print(fname, starname)
+            #starname1 = header['OBJECT1'].replace(" ", "_")
+            #starname2 = header['OBJECT2'].replace(" ", "_")
+            #key = "{}+{}".format(starname1, starname2)
+            #fileDict[key].append(fname)
         for star in fileDict.keys():
-            Add(fileDict[star], outfilename="%s_bright.fits" % star)
+            Add(fileDict[star], outfilename="%s_total.fits" % star)
     else:
         allfiles = [f for f in os.listdir("./") if f.startswith("echi") and "-0" in f and "telluric" in f]
         fileDict = defaultdict(list)
@@ -196,5 +208,5 @@ if __name__ == "__main__":
             starname = header['OBJECT'].replace(" ", "_")
             fileDict[starname].append(fname)
         for star in fileDict.keys():
-            Add(fileDict[star], outfilename="%s.fits" % star)
+            Add(fileDict[star], outfilename="%s_total.fits" % star)
     
