@@ -16,21 +16,7 @@ import GetAtmosphere
 
 badregions = [[]]
 
-
-def FindOrderNums(orders, wavelengths):
-    """
-    Given a list of xypoint orders and
-    another list of wavelengths, this
-    finds the order numbers with the
-    requested wavelengths
-    """
-    nums = []
-    for wave in wavelengths:
-        for i, order in enumerate(orders):
-            if order.x[0] < wave and order.x[-1] > wave:
-                nums.append(i)
-                break
-    return nums
+FindOrderNums = HelperFunctions.FindOrderNums
 
 
 def EstimateModel():
@@ -69,7 +55,16 @@ def EstimateModel():
         exists = False
 
         # Read file
-        orders = HelperFunctions.ReadExtensionFits(fname)
+        all_orders = HelperFunctions.ReadExtensionFits(fname)
+
+        # New data has some more orders that are hopelessely contaminated by tellurics.
+        # Remove them...
+        orders = []
+        for order in all_orders:
+            mwl = np.median(order.x)
+            if (mwl > 1480 and mwl < 1810) or (mwl > 1935 and mwl < 2470):
+                orders.append(order.copy())
+
 
         angle = float(header["ZD"])
         resolution = 40000.0
