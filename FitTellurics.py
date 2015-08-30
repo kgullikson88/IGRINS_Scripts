@@ -12,7 +12,10 @@ import DataStructures
 import Units
 import HelperFunctions
 import GetAtmosphere
+import logging
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 badregions = [[]]
 
