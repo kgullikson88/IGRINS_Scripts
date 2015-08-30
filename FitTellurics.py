@@ -423,7 +423,15 @@ def FitAll():
         outfilename = "Corrected_{:s}-0.fits".format(name)
 
         # Read file
-        orders = HelperFunctions.ReadExtensionFits(fname)
+        all_orders = HelperFunctions.ReadExtensionFits(fname)
+
+        # New data has some more orders that are hopelessely contaminated by tellurics.
+        # Remove them...
+        orders = []
+        for order in all_orders:
+            mwl = np.median(order.x)
+            if (mwl > 1480 and mwl < 1810) or (mwl > 1935 and mwl < 2470):
+                orders.append(order.copy())
 
         angle = float(header["ZD"])
         resolution = 40000.0
