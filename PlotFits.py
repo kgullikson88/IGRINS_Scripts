@@ -1,7 +1,7 @@
 import sys
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 import HelperFunctions
 
@@ -37,16 +37,18 @@ if __name__ == "__main__":
         ls = linestyles[fnum % len(linestyles)]
         orders = HelperFunctions.ReadFits(fname, extensions=True, x="wavelength", y="flux", cont="continuum",
                                           errors="error")
+        
         print fname, len(orders)
         if not oneplot:
             plt.figure(fnum)
             plt.title(fname)
 
         for i, order in enumerate(orders):
+            print(i, np.median(order.x))
 
             # order.cont = FittingUtilities.Continuum(order.x, order.y, lowreject=3, highreject=3)
             if pixelscale:
-                order.x = numpy.arange(order.size())
+                order.x = np.arange(order.size())
 
             if normalize:
                 if i == 0:
