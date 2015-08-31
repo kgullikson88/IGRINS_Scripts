@@ -21,6 +21,8 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0, adjust_wave=True):
     orders, wavefields = HelperFunctions.ReadFits(filename, return_aps=True)
     try:
         errors = HelperFunctions.ReadFits(filename.replace("spec", "variance"))
+        for i, error in enumerate(errors):
+            errors[i].y = np.sqrt(error.y)
     except IOError:
         warnings.warn("No Variance file found. Falling back to using the sqrt of the flux")
         errors = []

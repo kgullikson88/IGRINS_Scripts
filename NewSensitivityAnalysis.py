@@ -47,7 +47,7 @@ def check_sensitivity():
                         vsini_values=(0, 10, 20, 30, 40, 50),
                         Tvalues=range(3000, 7100, 100),
                         debug=False,
-                        addmode='simple',
+                        addmode='all',
                         output_mode='hdf5')
 
 
