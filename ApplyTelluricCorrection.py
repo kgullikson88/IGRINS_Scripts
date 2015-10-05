@@ -45,17 +45,28 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
 
     if get_primary:
         primary_orders = ReadCorrectedFile(corrected, yaxis="primary")[0]
-    if offset == None:
-        offset = len(original_orders) - len(corrected_orders)
-    print "Offset = ", offset
-    for i in range(len(original_orders) - offset):
-        data = original_orders[i]
+    # if offset == None:
+    #    offset = len(original_orders) - len(corrected_orders)
+    #print "Offset = ", offset
+    new_orders = []
+    for i, data in enumerate(original_orders):
+
         data.cont = FittingUtilities.Continuum(data.x, data.y)
         try:
-            model = corrected_orders[i]
-            header = corrected_headers[i]
+            idx = HelperFunctions.FindOrderNums(corrected_orders, [np.median(data.x)])
+            if len(idx) < 1:
+                continue
+            elif len(idx) > 1:
+                j = np.argmin([np.abs(np.median(corrected_orders[k].x) - np.median(data.x)) for k in idx])
+                idx = idx[j]
+            else:
+                idx = idx[0]
+            model = corrected_orders[idx]
+            header = corrected_headers[idx]
+            if abs(np.median(model.x) - np.median(data.x)) > 1:
+                continue
             if get_primary:
-                primary = primary_orders[i]
+                primary = primary_orders[idx]
             if i == 0 and "CH4" in primary_header.keys():
                 print "Humidity = {0:g}\nT = {1:g}\n[CH4] = {2:g}\n[CO2] = {3:g}\n" \
                       "CO = {4:g}\nN2O = {5:g}\n".format(primary_header['humidity'],
@@ -103,10 +114,10 @@ def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False)
         data.err /= model.y
         if get_primary:
             data.y /= primary.y
-        original_orders[i] = data[1:-1].copy()
+        new_orders.append(data[1:-1].copy())
     if plot:
         plt.show()
-    return original_orders
+    return new_orders
 
 
 def Correct(original, corrected, offset=None, get_primary=False, plot=False):
@@ -185,7 +196,7 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
 
 def main1():
     primary = False
-    plot = False
+    plot = True
     if len(sys.argv) > 2:
         original = sys.argv[1]
         corrected = sys.argv[2]
