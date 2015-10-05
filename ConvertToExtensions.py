@@ -1,19 +1,15 @@
 import sys
 import os
 import warnings
-
-import matplotlib.pyplot as plt
-from astropy.io import fits
 from astropy import units as u
 from astropy import time
+import FittingUtilities
+
+from astropy.io import fits
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
-from astropy.modeling import models, fitting
-import TelluricFitter
 
-import FittingUtilities
 import HelperFunctions
-import Units
 import parse_igrins_log
 
 
@@ -38,7 +34,17 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0, adjust_wave=True):
         for i, order in enumerate(orders):
             orders[i].x = wave_data[i].copy()
 
+    # Read in the blazes, and fit the flat lamp spectrum
     blazes = np.loadtxt(blazefile)
+    wvl = np.empty(len(orders))
+    fl = np.empty(len(orders))
+    for i, order in enumerate(orders):
+        idx = np.nanargmax(blazes[:, i])
+        wvl[i] = order.x[idx]
+        fl[i] = blazes[:, i][idx]
+    sorter = np.argsort(wvl)
+    flat_spec = spline(wvl[sorter], fl[sorter])
+
     header_info = []
     ret_orders = []
     ap2ord = {}  #Dictionary giving correspondence from aperture number to echelle order number
@@ -57,8 +63,8 @@ def ReadFile(filename, blazefile="H_BLAZE.DAT", skip=0, adjust_wave=True):
         # Divide by blaze function
         blaze = blazes[:, i][goodindices]
         blaze[blaze < 1e-3] = 1e-3
-        order.y /= blaze
-        order.err /= blaze
+        order.y /= blaze / flat_spec(order.x)
+        order.err /= blaze / flat_spec(order.x)
 
         # Fit continuum
         order.cont = FittingUtilities.Continuum(order.x, order.y, fitorder=5, lowreject=1.5, highreject=2)
