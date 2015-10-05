@@ -12,6 +12,7 @@ import StarData
 
 
 
+
 # Define regions contaminated by telluric residuals or other defects. We will not use those regions in the cross-correlation
 badregions = [[0, 1510],  # Blue end of H band (lots of water absorption)
               # [1561, 1615],  # CO2 band that is often poorly corrected (for now at least...)
@@ -76,12 +77,13 @@ if __name__ == '__main__':
                                         badregions=badregions,
                                         interp_regions=interp_regions,
                                         metal_values=(0, -0.5, 0.5),
-                                        #vsini_values=(1, 5.0, 10.0, 20.0, 30.0),
+                                        # vsini_values=(1, 5.0, 10.0, 20.0, 30.0),
+                                        logg_values=(3.0, 3.5, 4.0, 4.5),
                                         Tvalues=range(3000, 9000, 100),
-                                        vsini_values=(70, 80, 90),
+                                        vsini_values=(1, 5, 10, 20, 30),
                                         observatory='McDonald',
                                         debug=False,
-                                        vbary_correct=True,
+                                        vbary_correct=False,
                                         addmode='simple',
                                         output_mode='hdf5')
 

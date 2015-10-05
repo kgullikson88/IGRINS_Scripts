@@ -45,7 +45,7 @@ def check_sensitivity():
                         badregions=badregions, interp_regions=interp_regions,
                         metal_values=(0.0,),
                         vsini_values=(0, 10, 20, 30, 40, 50),
-                        Tvalues=range(3000, 7100, 100),
+                        Tvalues=range(4700, 7000, 100),
                         debug=False,
                         addmode='all',
                         output_mode='hdf5')
