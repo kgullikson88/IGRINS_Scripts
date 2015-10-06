@@ -78,12 +78,12 @@ if __name__ == '__main__':
                                         interp_regions=interp_regions,
                                         metal_values=(0, -0.5, 0.5),
                                         # vsini_values=(1, 5.0, 10.0, 20.0, 30.0),
-                                        logg_values=(3.0, 3.5, 4.0, 4.5),
+                                        logg_values=(4.5),
                                         Tvalues=range(3000, 9000, 100),
                                         vsini_values=(1, 5, 10, 20, 30),
                                         observatory='McDonald',
                                         debug=False,
-                                        vbary_correct=False,
+                                        vbary_correct=True,
                                         addmode='simple',
                                         output_mode='hdf5')
 
