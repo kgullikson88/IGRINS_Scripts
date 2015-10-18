@@ -67,6 +67,8 @@ if __name__ == '__main__':
         if vsini is not None:
             new_file_list.append(fname)
             new_prim_vsini.append(vsini)
+        else:
+            print('No vsini found for file {}'.format(fname))
 
     GenericSearch.slow_companion_search(new_file_list, new_prim_vsini,
                                         hdf5_file=hdf5_filename,
@@ -84,6 +86,6 @@ if __name__ == '__main__':
                                         observatory='McDonald',
                                         debug=False,
                                         vbary_correct=True,
-                                        addmode='simple',
+                                        addmode='all',
                                         output_mode='hdf5')
 
