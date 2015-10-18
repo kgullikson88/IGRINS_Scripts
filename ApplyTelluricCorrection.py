@@ -27,6 +27,32 @@ def ReadCorrectedFile(fname, yaxis="model"):
     return orders, headers
 
 
+def Correct_New(original, corrected, get_primary=False, plot=False, *args, **kwargs):
+    original_orders, _ = ReadCorrectedFile(corrected, yaxis="flux")
+    primary_orders, _ = ReadCorrectedFile(corrected, yaxis="primary")
+    model_orders, corrected_headers = ReadCorrectedFile(corrected)
+    primary_header = pyfits.getheader(corrected)
+
+    new_orders = []
+    for i, (original, model, primary) in enumerate(zip(original_orders, model_orders, primary_orders)):
+        original.cont /= primary.y
+
+        if plot:
+            plt.plot(original.x, original.y/original.cont, 'k-', alpha=0.5)
+            plt.plot(model.x, model.y, 'r-')
+
+        model.y[model.y < 1e-4] = 1e-4
+        original.y /= model.y 
+        new_orders.append(original.copy())
+    if plot:
+        plt.xlabel('Wavelength (nm)')
+        plt.ylabel('Flux')
+        plt.title('Comparison for file {}'.format(corrected))
+        plt.show()
+    return new_orders
+
+
+
 def Correct_Old(original, corrected, offset=None, get_primary=False, plot=False):
     # Read in the data and model
     original_orders = HelperFunctions.ReadFits(original, extensions=True, x="wavelength", y="flux", errors="error",
@@ -206,7 +232,8 @@ def main1():
         outfilename = "%s_telluric_corrected.fits" % (original.split(".fits")[0])
         print "Outputting to %s" % outfilename
 
-        corrected_orders = Correct_Old(original, corrected, offset=None, get_primary=primary, plot=plot)
+        #corrected_orders = Correct_Old(original, corrected, offset=None, get_primary=primary, plot=plot)
+        corrected_orders = Correct_New(original, corrected, offset=None, get_primary=primary, plot=plot)
 
         column_list = []
         if plot:
@@ -235,7 +262,8 @@ def main1():
 
             print corrected, original
 
-            corrected_orders = Correct_Old(original, corrected, offset=None, plot=plot)
+            #corrected_orders = Correct_Old(original, corrected, offset=None, plot=plot)
+            corrected_orders = Correct_New(original, corrected, offset=None, plot=plot)
 
             outfilename = "{0:s}_telluric_corrected.fits".format(original.split(".fits")[0])
             print "Outputting to %s" % outfilename
@@ -258,6 +286,7 @@ def main1():
                 plt.title(original)
                 plt.xlabel("Wavelength (nm)")
                 plt.ylabel("Flux")
+                plt.ylim((0, 100000))
                 plt.show()
 
 
