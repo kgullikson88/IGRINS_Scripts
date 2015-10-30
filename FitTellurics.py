@@ -200,7 +200,8 @@ def FitAll():
                 # Put the data in a constant wavelength grid
                 original_x = order.x.copy()
                 dx = min(order.x[1:] - order.x[:-1])
-                xgrid = np.arange(order.x[0], order.x[-1]+dx/2.0, dx)
+                #xgrid = np.arange(order.x[0], order.x[-1]+dx/2.0, dx)
+                xgrid = np.linspace(order.x[0], order.x[-1], order.size())
                 rebinned_order = FittingUtilities.RebinData(order, xgrid)
 
                 primary, model = fitter.Fit(data=rebinned_order.copy(),
@@ -210,9 +211,9 @@ def FitAll():
                                             source_kwargs=dict(window_size=101, order=4),
                                             continuum_fit_order=3,
                                             return_resolution=False,
-                                            adjust_wave="data",
+                                            adjust_wave="model",
                                             wavelength_fit_order=5,
-                                            air_wave=False)
+                                            air_wave=True)
                 humidity = fitter.GetValue("h2o")
                 temperature = fitter.GetValue("temperature")
                 ch4 = fitter.GetValue("ch4")
