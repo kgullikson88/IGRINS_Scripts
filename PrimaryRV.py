@@ -6,6 +6,8 @@ from collections import defaultdict
 import h5py
 import pandas as pd
 import numpy as np
+from astropy.io import fits
+import os
 
 
 ADDMODE = 'ml'
@@ -41,10 +43,28 @@ def collect_rv(hdf5_file, output_log=None):
                     best = df.loc[df.addmode == ADDMODE].sort_values(by='CCF').tail(1)
                     best = {k: v for k, v in zip(best.columns, best.values[0])}
                     with open(output_log, 'a') as log:
-                        log.write(
-                            '{star},{date},{teff},{logg},{feh},{vsini},{addmode},{RV},{RV_err},{CCF}\n'.format(**best))
+                        log.write('{star},{date},{teff},{logg},{feh},{vsini},{addmode},{RV},{RV_err},{CCF}\n'.format(**best))
 
     return pd.concat(df_list, ignore_index=True)
+
+
+
+jd_cache = {}
+def get_jd(fname, dirname='{}/School/Research/IGRINS_data'.format(os.environ['HOME'])):
+    fname = os.path.join(dirname, fname)
+    if fname in jd_cache:
+        return jd_cache[fname]
+    if not os.path.exists(fname):
+        raise OSError('Filename does not exist: {}'.format(fname))
+        #return np.nan
+    header = fits.getheader(fname)
+    if 'HJD' in header:
+        jd = header['HJD']
+    else:
+        jd = header['JD']
+
+    jd_cache[fname] = jd
+    return jd
 
 
 def measure_rv(hdf5_file, output_log=None, update_attrs=True):
@@ -76,6 +96,7 @@ def measure_rv(hdf5_file, output_log=None, update_attrs=True):
                                       extensions=True, trimsize=trimsize, vsini=None,
                                       reject_outliers=False)
                 Npix = sum([o.size() for o in orders])
+                jd = get_jd(fname)
 
                 # Loop over the datasets
                 summary = defaultdict(list)
@@ -86,6 +107,7 @@ def measure_rv(hdf5_file, output_log=None, update_attrs=True):
                     summary['logg'].append(dataset.attrs['logg'])
                     summary['feh'].append(dataset.attrs['[Fe/H]'])
                     summary['addmode'].append(dataset.attrs['addmode'])
+                    summary['HJD'].append(jd)
 
                     # Estimate the rv and rv_error
                     vel, corr = dataset.value
@@ -114,7 +136,8 @@ def measure_rv(hdf5_file, output_log=None, update_attrs=True):
                     best = {k: v for k, v in zip(best.columns, best.values[0])}
                     with open(output_log, 'a') as log:
                         log.write(
-                            '{star},{date},{teff},{logg},{feh},{vsini},{addmode},{RV},{RV_err},{CCF}\n'.format(**best))
+                            '{star},{date},{HJD},{teff},{logg},{feh},{vsini},{addmode},{RV},{RV_err},{CCF}\n'.format(
+                                **best))
 
     return pd.concat(df_list, ignore_index=True)
 
@@ -123,6 +146,6 @@ if __name__ == '__main__':
     for fname in sys.argv[1:]:
         output = fname.replace('hdf5', 'rv.txt')
         with open(output, 'w') as log:
-            log.write('star,date,teff,logg,feh,vsini,addmode,rv,rv_err,ccf\n')
+            log.write('star,date,HJD,teff,logg,feh,vsini,addmode,rv,rv_err,ccf\n')
         summary = measure_rv(fname, output_log=output)
         summary.to_csv(output.replace('.txt', '_summary.txt'), index=False)
