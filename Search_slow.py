@@ -35,7 +35,7 @@ else:
 
 
 def add_oh_lines(oh_file, badregions=[], minstrength=1.0, tol=0.05):
-    oh_data = pandas.read_csv(oh_file, header=False, sep=" ", skipinitialspace=True, names=['wave', 'strength'])
+    oh_data = pandas.read_csv(oh_file, header=None, sep=" ", skipinitialspace=True, names=['wave', 'strength'])
     oh = oh_data[oh_data['strength'] > minstrength]
     n = 1.0 + 2.735182e-4 + 131.4182 / oh['wave'] ** 2 + 2.76249e8 / oh['wave'] ** 4
     oh['wave'] = oh['wave'] / (n * 10.0)
@@ -78,10 +78,11 @@ if __name__ == '__main__':
                                         modeldir=modeldir,
                                         badregions=badregions,
                                         interp_regions=interp_regions,
-                                        metal_values=(0, -0.5, 0.5),
+                                        #metal_values=(0, -0.5, 0.5),
+                                        metal_values=(0.5,),
                                         # vsini_values=(1, 5.0, 10.0, 20.0, 30.0),
                                         logg_values=(4.5),
-                                        Tvalues=range(3000, 9000, 100),
+                                        Tvalues=range(8800, 9000, 100),
                                         vsini_values=(1, 5, 10, 20, 30),
                                         observatory='McDonald',
                                         debug=False,
