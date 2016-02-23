@@ -44,11 +44,12 @@ def check_sensitivity():
                         trimsize=trimsize,
                         badregions=badregions, interp_regions=interp_regions,
                         metal_values=(0.0,),
-                        vsini_values=(100, 150, 200, 250),
-                        Tvalues=range(10000, 12100, 1000),
+                        vsini_values=(75, 100, 125, 150, 175, 200, 225, 250),
+                        Tvalues=range(3000, 3300, 100),
                         debug=False,
                         addmode='all',
-                        output_mode='hdf5')
+                        output_mode='hdf5',
+                        output_file='Sensitivity.hdf5')
 
 
 if __name__ == '__main__':

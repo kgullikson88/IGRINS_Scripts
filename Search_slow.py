@@ -3,8 +3,8 @@ import os
 
 import pandas
 
-import GenericSearch
-import StarData
+from kglib.cross_correlation import GenericSearch
+from kglib.utils import StarData
 
 
 

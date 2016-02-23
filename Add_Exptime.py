@@ -4,6 +4,7 @@ from astropy.io import fits
 import sys
 
 BASE = '/Volumes/DATADRIVE/IGRINS_data/'
+BASE = '/media/FreeAgent_Drive_/data/IGRINS_data/'
 
 if __name__ == '__main__':
     for fname in sys.argv[1:]:

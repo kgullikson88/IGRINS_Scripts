@@ -96,7 +96,10 @@ def measure_rv(hdf5_file, output_log=None, update_attrs=True):
                                       extensions=True, trimsize=trimsize, vsini=None,
                                       reject_outliers=False)
                 Npix = sum([o.size() for o in orders])
-                jd = get_jd(fname)
+                try:
+                    jd = get_jd(fname)
+                except KeyError:
+                    continue
 
                 # Loop over the datasets
                 summary = defaultdict(list)

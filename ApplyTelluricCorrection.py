@@ -1,6 +1,7 @@
 import sys
 import os
 import FittingUtilities
+from FittingUtilities import FindLines
 
 from astropy.io import fits as pyfits
 import matplotlib.pyplot as plt
@@ -27,11 +28,96 @@ def ReadCorrectedFile(fname, yaxis="model"):
     return orders, headers
 
 
+def fit_2dspec(xl, yl, zl, x_degree=4, y_degree=3,
+               x_domain=None, y_domain=None):
+    from astropy.modeling import fitting
+    # Fit the data using astropy.modeling
+    if x_domain is None:
+        x_domain = [min(xl), max(xl)]
+    # more room for y_domain??
+    if y_domain is None:
+        #y_domain = [orders[0]-2, orders[-1]+2]
+        y_domain = [min(yl), max(yl)]
+    from astropy.modeling.polynomial import Chebyshev2D
+    p_init = Chebyshev2D(x_degree=x_degree, y_degree=y_degree,
+                         x_domain=x_domain, y_domain=y_domain)
+    f = fitting.LinearLSQFitter()
+
+    p = f(p_init, xl, yl, zl)
+
+    for i in [0]:
+        dd = p(xl, yl) - zl
+        m = np.abs(dd) < 3.*dd.std()
+        p = f(p, xl[m], yl[m], zl[m])
+
+    return p, m
+
+
+def fit_wavelength(orders, ordernums, first_order=None, last_order=None, x_degree=4, y_degree=3):
+    """ Fit the wavelength in a whole chip, and return the 2D polynomial callable
+    """
+    pixel_list = []
+    ordernum_list = []
+    wave_list = []
+    if first_order is None:
+        first_order = 0
+    if last_order is None:
+        last_order = len(orders) - 1
+    
+    for order, ordernum in zip(orders[first_order:last_order+1], ordernums[first_order:last_order+1]):
+        lines = FindLines(order)
+        pixel_list.extend(lines)
+        ordernum_list.extend(np.ones_like(lines)*ordernum)
+        wave_list.extend(order.x[lines])
+    
+    pixel_list = np.array(pixel_list)
+    ordernum_list = np.array(ordernum_list)
+    wave_list = np.array(wave_list)
+    p, m = fit_2dspec(pixel_list, ordernum_list, wave_list*ordernum_list, 
+                      x_degree=x_degree, y_degree=y_degree)
+    
+    return p
+
+def fix_chip_wavelength(model_orders, data_orders, band_cutoff=1870):
+    """ Adjust the wavelength in data_orders to be self-consistent
+    """
+    # H band
+    model_orders_H = [o.copy() for o in model_orders if o.x[-1] < band_cutoff]
+    data_orders_H = [o.copy() for o in data_orders if o.x[-1] < band_cutoff]
+    ordernums_H = 121.0 - np.arange(len(model_orders_H))
+    p_H = fit_wavelength(model_orders_H, ordernums_H, first_order=3, last_order=len(ordernums_H) - 4)
+
+    # K band
+    model_orders_K = [o.copy() for o in model_orders if o.x[-1] > band_cutoff]
+    data_orders_K = [o.copy() for o in data_orders if o.x[-1] > band_cutoff]
+    ordernums_K = 92.0 - np.arange(len(model_orders_K))
+    p_K = fit_wavelength(model_orders_K, ordernums_K, first_order=7, last_order=len(ordernums_K) - 4)
+
+    new_orders = []
+    for i, order in enumerate(data_orders):
+        pixels = np.arange(order.size(), dtype=np.float)
+        if order.x[-1] < band_cutoff:
+            # H band
+            ordernum = ordernums_H[i] * np.ones_like(pixels)
+            wave = p_H(pixels, ordernum) / ordernum
+        else:
+            # K band
+            ordernum = ordernums_K[i-len(ordernums_H)] * np.ones_like(pixels)
+            wave = p_K(pixels, ordernum) / ordernum
+            
+        new_orders.append(DataStructures.xypoint(x=wave, y=order.y, cont=order.cont, err=order.err))
+    return new_orders
+
+
+
 def Correct_New(original, corrected, get_primary=False, plot=False, *args, **kwargs):
     original_orders, _ = ReadCorrectedFile(corrected, yaxis="flux")
     primary_orders, _ = ReadCorrectedFile(corrected, yaxis="primary")
     model_orders, corrected_headers = ReadCorrectedFile(corrected)
     primary_header = pyfits.getheader(corrected)
+
+    # Fix the wavelength axis in the data orders
+    original_orders = fix_chip_wavelength(model_orders, original_orders)
 
     new_orders = []
     for i, (original, model, primary) in enumerate(zip(original_orders, model_orders, primary_orders)):
@@ -222,7 +308,7 @@ def Correct(original, corrected, offset=None, get_primary=False, plot=False):
 
 def main1():
     primary = False
-    plot = True
+    plot = False
     if len(sys.argv) > 2:
         original = sys.argv[1]
         corrected = sys.argv[2]
@@ -261,6 +347,9 @@ def main1():
             original = corrected.split("Corrected_")[-1].split("-")[0] + ".fits"
 
             print corrected, original
+            if not os.path.exists(original):
+                print('******************\n\nOriginal file ({}) not found!!\n\n*********************'.format(original))
+                continue
 
             #corrected_orders = Correct_Old(original, corrected, offset=None, plot=plot)
             corrected_orders = Correct_New(original, corrected, offset=None, plot=plot)

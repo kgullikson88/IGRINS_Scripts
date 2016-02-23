@@ -1,6 +1,6 @@
 import sys
 
-import GenericSearch
+from kglib.cross_correlation import GenericSearch
 
 # Define regions contaminated by telluric residuals or other defects. We will not use those regions in the cross-correlation
 # badregions = [[475, 495]]
@@ -42,12 +42,15 @@ if __name__ == '__main__':
                                         badregions=badregions,
                                         metal_values=(0.0),
                                         logg_values=(3.5, 4.0, 4.5,),
-                                        vsini_values=range(50, 300, 25),
+                                        vsini_values=range(75, 300, 25),
+                                        #logg_values=(4.5,),
+                                        #vsini_values=(250,),
+                                        #Tvalues=(9250,),
                                         Tvalues=Tvalues,
                                         observatory='McDonald',
                                         debug=False,
                                         reject_outliers=False,
-                                        vbary_correct=False,
+                                        vbary_correct=True,
                                         addmode='all',
                                         output_mode='hdf5',
-                                        output_file='CCF_primary_20151129.hdf5')
+                                        output_file='CCF_primary_total.hdf5')
